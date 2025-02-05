@@ -7,12 +7,13 @@ export type ConfigVariable = {
   step?: number;
 };
 
-export type Config = {
+export interface Config {
+  title?: string;  // Optional title for the sketch
   sliders: {
     name: string;
+    initial: number;
     min: number;
     max: number;
     step: number;
-    initial: number;
   }[];
 } 

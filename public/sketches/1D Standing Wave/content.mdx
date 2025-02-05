@@ -1,0 +1,28 @@
+In what we’ve discussed already, we learned that a standing wave in 1D is the superposition of two waves traveling in opposite directions. A standing wave can thus simply be represented by the addition of two wave formulas, where one has a negated angular frequency (to indicate that it is traveling in the opposite direction):
+
+$$ y(x, t) = A \sin(kx - \omega t) + A \sin(kx + \omega t) $$
+
+We can simplify this further, and represent the addition as a multiplication of sines. There is a convenient trigonometric identity that we can leverage for this purpose:
+
+$$ \sin(a) + \sin(b) = 2 \sin\left(\frac{a + b}{2}\right) \cos\left(\frac{a - b}{2}\right) $$
+
+Applying the trigonometric identity to our standing wave formula produces the following:
+
+$$ y(x, t) = 2A \sin(kx) \cos(\omega t) $$
+
+Hence, a 1D standing wave can thus be represented as the multiplication of a sine and a cosine function (we could equivalently replace this cosine by a sine by adding an offset of half a rotation equal to $\pi$). Let’s go ahead and visualize what this would look like:
+
+And just like that, we’ve created a standing wave in 1D! Again, you’ll notice that the number of nodes and antinodes depends on the mode $n$ of the wave that influences the wave number. 
+
+**What does this look like in form of code**? The wave that you see above is just a series of points placed horizontally along the canvas (from left to right), that are then displaced by the value computed with the sine function.
+
+```jsx
+// Wave drawing loop, steps through x-coordinates, 2 pixels at a time
+for (let x = 0; x < width; x += 2) {  
+    // Standing wave equation: y = 2A sin(kx) cos(ωt)
+    let y = 2 * amplitude * sin(k * x) * cos(angularFrequency * time);
+    point(x, -y);
+}
+```
+
+As a side note, if we don’t care about the movement of the standing wave, we can dispose of the cosine function entirely, and just replace it by a hardcoded value in the range `]-1, 1[`, depending on which moment of the cycle we want to visualize.

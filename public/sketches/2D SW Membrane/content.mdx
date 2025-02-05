@@ -1,0 +1,9 @@
+Now we can already move to the 2D setting; a standing wave on a surface can be formulated in a similar manner, we only need to account for an additional axis:
+
+$$ z(x, y, t) = A \sin({k_x} * x) \sin({k_y} * y) \cos(\omega * t) $$
+
+In reality, we’re skipping quite a few steps here to get to the standing wave formula in 2D. Chapter 7 of [David Morin’s book on waves](https://davidmorin.physics.fas.harvard.edu/books/waves/) provides a more academic explanation of how the 2D standing formula can be derived. It also briefly mentions Chladni patterns towards the end.
+
+Here we are again simply describing a relationship of displacement, where the wave now deforms a surface/membrane along two coordinate axes. The reason why this approximation works, is because **sine and cosine functions naturally satisfy the boundary conditions of a rectangular plate**, where the wave should evaluate to zero at the edges. 
+
+Similarly to the 1D setting, the two wave numbers at play here $k_x$ and $k_y$ determine the spatial variation of the wave in the x and y directions, and are defined as $n\cdot\frac{\pi }{L_x}$ and $m\cdot\frac{\pi }{L_y}$ respectively. The integer parameters $n$ and $m$ thus control the number of repetitions (oscillations) of the wave along the x and y axes, and are, just like before, called the modes of the plate. Since there are two modes, we now have control over a greater variety of resulting nodal patterns that can emerge:

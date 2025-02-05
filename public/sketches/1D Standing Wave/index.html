@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link type="text/css" rel="stylesheet" href="style.css" />
+        <script src="./libraries/p5.min.js"></script>
+    </head>
+    <body>
+        <script>
+            // Initialize the fx namespace
+            window.fx = {};
+
+            window.addEventListener('message', (event) => {
+                if (event.data.type === 'configUpdate') {
+                    const [namespace, varName] = event.data.name.split('.');
+                    if (namespace === 'fx') {
+                        window.fx[varName] = event.data.value;
+                    }
+                } else if (event.data.type === 'codeUpdate') {
+                    // Remove all existing p5 instances and canvases
+                    if (window.remove) window.remove();
+                    document.querySelectorAll('canvas').forEach(c => c.remove());
+                    
+                    // Remove the existing sketch script
+                    const oldScript = document.getElementById('sketch');
+                    oldScript.remove();
+                    
+                    // Create and append new script element with updated code
+                    const newScript = document.createElement('script');
+                    newScript.id = 'sketch';
+                    newScript.type = 'text/javascript';
+                    newScript.textContent = event.data.code;
+                    document.body.appendChild(newScript);
+                }
+            });
+        </script>
+        <script type="text/javascript" id="sketch" src="index.js"></script>
+    </body>
+</html>

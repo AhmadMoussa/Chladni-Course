@@ -1,0 +1,19 @@
+{
+    "title": "2D Standing Wave Formula: Standing Waves of 2D Surfaces",
+    "sliders": [
+        {
+            "name": "amplitude",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "initial": 50
+        },
+        {
+            "name": "wavelength",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "initial": 50
+        }
+    ]
+}   

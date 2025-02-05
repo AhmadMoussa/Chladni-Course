@@ -28,3 +28,61 @@ body {
   object-fit: contain;
 }
 
+/* Math formula styling */
+.math-display {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure KaTeX renders properly in dark mode */
+[data-theme="dark"] .katex {
+  color: var(--foreground);
+}
+
+/* Remove the # from the markdown headings */
+.prose h1::before,
+.prose h2::before,
+.prose h3::before {
+  content: none !important;
+}
+
+/* Add some spacing between equations */
+.math-display {
+  margin: 1.5em 0;
+}
+
+/* Adjust KaTeX formula size */
+.katex {
+  font-size: 1.5em !important; /* Base size */
+}
+
+/* Specifically target display math (the block equations) */
+.math-display .katex {
+  font-size: 1.5em !important;
+}
+
+/* Ensure display math has proper vertical spacing */
+.math-display {
+  margin: 1.5em 0;
+  display: flex;
+  justify-content: center;
+  padding: 1em;
+  border: 1px solid #e5e7eb; /* Light mode border */
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.05); /* Subtle background */
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+  .math-display {
+    border-color: #374151; /* Darker border in dark mode */
+    background-color: rgba(255, 255, 255, 0.02); /* Subtle dark mode background */
+  }
+}
+
+/* Add subtle shadow on hover */
+.math-display:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+

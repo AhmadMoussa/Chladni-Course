@@ -16,7 +16,33 @@ export default {
           border: '#3c3c3c',
         }
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            'h1': {
+              marginTop: '1.5em',
+              marginBottom: '0.5em',
+            },
+            // Make math display blocks stand out
+            '.math': {
+              padding: '1em 0',
+              overflowX: 'auto',
+            },
+            // Ensure math is centered
+            '.math-display': {
+              display: 'flex',
+              justifyContent: 'center',
+            },
+            // Add some spacing around equations
+            'mjx-container': {
+              margin: '1em 0',
+            }
+          }
+        }
+      }
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 } satisfies Config;

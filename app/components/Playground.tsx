@@ -5,7 +5,10 @@ import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-javascript';
 import 'prism-themes/themes/prism-shades-of-purple.css';
-
+import { MDXRemote } from 'next-mdx-remote';
+import { serialize } from 'next-mdx-remote/serialize';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js'
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
@@ -33,13 +36,20 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
   const [configVars, setConfigVars] = useState<ConfigVariable[]>([]);
   const [htmlContent, setHtmlContent] = useState(''); // New state for HTML content
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [mdxContent, setMdxContent] = useState<any>(null);
+  const [sketchTitle, setSketchTitle] = useState('Sketch'); // Add state for title
 
   // Add autoRun state
   const [autoRun, setAutoRun] = useState(false);
 
+  // Add error state
+  const [error, setError] = useState<string | null>(null);
 
   // Modify the fetch effect to also load the config file
   useEffect(() => {
+    // Reset configVars when sketchPath changes
+    setConfigVars([]);
+    
     // Fetch config.json first, but don't block other operations if it fails
     fetch(`${sketchPath}/config.json`)
       .then(response => {
@@ -49,19 +59,19 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
         return response.json();
       })
       .then((config: Config) => {
-        setConfigVars(prevVars => {
-          if (prevVars.length === 0) {
-            return config.sliders.map(slider => ({
-              name: slider.name,
-              value: slider.initial,
-              type: 'number',
-              min: slider.min,
-              max: slider.max,
-              step: slider.step
-            }));
-          }
-          return prevVars;
-        });
+        // Set the title if it exists in config
+        if (config.title) {
+          setSketchTitle(config.title);
+        }
+        // Always set config vars from config file, remove the prevVars check
+        setConfigVars(config.sliders.map(slider => ({
+          name: slider.name,
+          value: slider.initial,
+          type: 'number',
+          min: slider.min,
+          max: slider.max,
+          step: slider.step
+        })));
       })
       .catch(() => {
         console.log('No config file found or invalid JSON - continuing without config');
@@ -78,7 +88,10 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
       })
       .then((jsData) => {
         setPendingCode(jsData);
-        setActiveCode(jsData);
+        // Only set activeCode on initial load if autoRun is true
+        if (autoRun) {
+          setActiveCode(jsData);
+        }
       })
       .catch((err) => console.error(err));
 
@@ -94,79 +107,59 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
         setHtmlContent(html);
       })
       .catch((err) => console.error(err));
+
+    // Add MDX fetch
+    fetch(`${sketchPath}/content.mdx`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to fetch content.mdx: ${response.statusText}`);
+        }
+        return response.text();
+      })
+      .then(async (mdxText) => {
+        const serialized = await serialize(mdxText, {
+          mdxOptions: {
+            remarkPlugins: [remarkMath],
+            rehypePlugins: [rehypeKatex],
+          }
+        });
+        setMdxContent(serialized);
+      })
+      .catch(() => {
+        console.log('No content.mdx file found - continuing without documentation');
+        setMdxContent(null);
+      });
   }, [sketchPath]);
 
   // Effect to update the global config variables when slider/toggle values change.
   useEffect(() => {
     configVars.forEach(({ name, value }) => {
-      // Update the global variable so that the draw function sees the new value.
-      // @ts-expect-error - Dynamic window property assignment with variable name
-      window[name] = value;
+      iframeRef.current?.contentWindow?.postMessage({
+        type: 'configUpdate',
+        name: `fx.${name}`,
+        value
+      }, '*');
     });
   }, [configVars]);
 
-  // Modify the iframe update effect to only run when code or HTML content changes
+  // Add new effect to inject variables when iframe loads
   useEffect(() => {
-    if (iframeRef.current && htmlContent) {
-      const iframe = iframeRef.current;
-      
-      const modifiedCode = activeCode.replace(
-        /const\s+(\w+)\s*=\s*(\d+(\.\d+)?|true|false)/g,
-        (match, name) => {
-          // Use the current value from configVars
-          const configVar = configVars.find(v => v.name === name);
-          return `window.${name} = ${configVar?.value ?? match};`
-        }
-      );
+    const handleIframeLoad = () => {
+      configVars.forEach(({ name, value }) => {
+        iframeRef.current?.contentWindow?.postMessage({
+          type: 'configUpdate',
+          name: `fx.${name}`,
+          value
+        }, '*');
+      });
+    };
 
-      // Insert the modified code into the HTML content
-      const modifiedHtml = htmlContent.replace(
-        /<script src="index.js"><\/script>/,
-        `<script>
-          // Setup message listener for config updates
-          window.addEventListener('message', (event) => {
-            if (event.data.type === 'configUpdate') {
-              window[event.data.name] = event.data.value;
-            } else if (event.data.type === 'initConfig') {
-              Object.entries(event.data.values).forEach(([name, value]) => {
-                window[name] = value;
-              });
-            }
-          });
-
-          // Wait for p5.js to be fully loaded
-          window.addEventListener('load', () => {
-            // Ensure p5 is available
-            if (typeof window.p5 !== 'undefined') {
-              ${modifiedCode}
-            } else {
-              console.error('p5.js not loaded properly');
-            }
-          });
-        </script>`
-      );
-
-      // Update all other resource paths to be relative to the sketch directory
-      const finalHtml = modifiedHtml.replace(
-        /(src|href)="(?!http|\/\/|data:)([^"]+)"/g,
-        `$1="${sketchPath}/$2"`
-      );
-
-      iframe.srcdoc = finalHtml;
-
-      // Send initial values after a short delay to ensure the iframe is ready
-      setTimeout(() => {
-        const initialMessage = {
-          type: 'initConfig',
-          values: configVars.reduce((acc, {name, value}) => {
-            acc[name] = value;
-            return acc;
-          }, {} as Record<string, number | boolean>)
-        };
-        iframe.contentWindow?.postMessage(initialMessage, '*');
-      }, 100);
+    const iframe = iframeRef.current;
+    if (iframe) {
+      iframe.addEventListener('load', handleIframeLoad);
+      return () => iframe.removeEventListener('load', handleIframeLoad);
     }
-  }, [activeCode, htmlContent]); // Remove configVars from dependencies
+  }, [configVars]);
 
   // Update the config change handler to post messages to iframe
   const handleConfigChange = (name: string, value: number | boolean) => {
@@ -179,23 +172,58 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
     // Send message to iframe instead of setting window variable directly
     iframeRef.current?.contentWindow?.postMessage({
       type: 'configUpdate',
-      name,
+      name: `fx.${name}`,
       value
     }, '*');
   };
 
-  // Handler for "Run Sketch" button.
-  // This updates the active code (and re-extracts config variables) to re-run the sketch.
+  // Modified handler for "Run Sketch" button
   const runSketch = () => {
-    setActiveCode(pendingCode);
+    console.log('Playground: Running sketch');
     
+    try {
+      // Clear any previous errors
+      setError(null);
+      
+      // Test if code is valid JavaScript
+      new Function(pendingCode);
+      
+      // Only send to iframe if no syntax error
+      iframeRef.current?.contentWindow?.postMessage({
+        type: 'codeUpdate',
+        code: pendingCode
+      }, '*');
+      setActiveCode(pendingCode);
+    } catch (error) {
+      console.error('Syntax error:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
+      // Don't send broken code to iframe
+    }
   };
 
   // Modify the Editor's onValueChange handler
   const handleCodeChange = (code: string) => {
     setPendingCode(code);
     if (autoRun) {
-      setActiveCode(code);
+      // Add a small delay to prevent too frequent updates
+      const timeoutId = setTimeout(() => {
+        try {
+          // Test if code is valid JavaScript
+          new Function(code);
+          // Only send to iframe if no syntax error
+          iframeRef.current?.contentWindow?.postMessage({
+            type: 'codeUpdate',
+            code: code
+          }, '*');
+          setActiveCode(code);
+          setError(null); // Clear error if code is valid
+        } catch (error) {
+          console.error('Syntax error:', error);
+          setError(error instanceof Error ? error.message : 'Unknown error');
+          // Don't send broken code to iframe
+        }
+      }, 100);
+      return () => clearTimeout(timeoutId);
     }
   };
 
@@ -207,16 +235,31 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
       {/* Title Div: Spans full width */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
         <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">
-          Sketch
+          {sketchTitle}
         </h2>
       </div>
 
-      {/* Main Content: Switches between row and column based on screen size */}
+      {/* Main Content: Modified to include MDX panel */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-      
+        {/* MDX Documentation Panel - 25% width on large screens */}
+        <div className="lg:w-[25%] border-r border-gray-200 dark:border-gray-700 overflow-auto">
+          <div className="p-4 prose dark:prose-invert prose-sm md:prose-base max-w-none">
+            {mdxContent ? (
+              <MDXRemote {...mdxContent} />
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">No documentation available</p>
+            )}
+          </div>
+        </div>
         
-        {/* Editor Panel - Full width on small screens, 45% on large */}
-        <div className="flex-1 lg:w-[45%] border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-700 flex flex-col">
+        {/* Editor Panel - Now 35% on large screens */}
+        <div className="flex-1 lg:w-[35%] border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          {/* Add error display */}
+          {error && (
+            <div className="px-4 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 text-sm">
+              <p className="font-mono">{error}</p>
+            </div>
+          )}
           <div className="flex-1 px-4 relative">
             <div className="absolute inset-0 overflow-auto">
               <div className="relative" style={{ minHeight: '300px' }}>
@@ -230,7 +273,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
                   className="w-full font-mono text-sm bg-editor-bg text-gray-200 border border-editor-border line-numbers"
                   style={{
                     fontFamily: 'var(--font-geist-mono)',
-                    fontSize: '16px',
+                    fontSize: '12px',
                     minHeight: '300px'
                   }}
                   preClassName="line-numbers"
@@ -240,17 +283,15 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
           </div>
         </div>
         
-        {/* Sketch Panel - Full width on small screens, 55% on large */}
-        <div className="h-[400px] lg:h-auto lg:w-[55%] bg-white dark:bg-gray-950 flex items-center justify-center">
-          <iframe
+        {/* Sketch Panel - Now 40% on large screens */}
+        <div className="h-[400px] lg:h-auto lg:w-[40%] bg-white dark:bg-gray-950 flex items-center justify-center">
+          {/* Add ref to the iframe */}
+          <iframe 
             ref={iframeRef}
-            className="w-full h-full border-none"
-            title="p5-sketch"
-            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            className="w-full h-full" 
+            src={`${sketchPath}/index.html`} 
           />
         </div>
-
-        
       </div>
 
       {/* Controls Section */}

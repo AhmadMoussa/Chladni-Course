@@ -40,12 +40,15 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
 
   // Modify the fetch effect to also load the config file
   useEffect(() => {
-
-    // Fetch config.json first
+    // Fetch config.json first, but don't block other operations if it fails
     fetch(`${sketchPath}/config.json`)
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Config file not found');
+        }
+        return response.json();
+      })
       .then((config: Config) => {
-        // Initialize configVars only if they haven't been set yet
         setConfigVars(prevVars => {
           if (prevVars.length === 0) {
             return config.sliders.map(slider => ({
@@ -60,7 +63,10 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
           return prevVars;
         });
       })
-      .catch(err => console.error('Error loading config:', err));
+      .catch(err => {
+        console.log('No config file found or invalid JSON - continuing without config');
+        setConfigVars([]); // Ensure configVars is empty array if no config
+      });
 
     // Fetch the index.js file for the editor
     fetch(`${sketchPath}/index.js`)

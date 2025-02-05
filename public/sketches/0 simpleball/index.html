@@ -9,27 +9,33 @@
             // Initialize the fx namespace
             window.fx = {};
 
-            window.addEventListener('message', (event) => {
-                if (event.data.type === 'configUpdate') {
-                    const [namespace, varName] = event.data.name.split('.');
-                    if (namespace === 'fx') {
-                        window.fx[varName] = event.data.value;
+            let sketch;
+
+            window.addEventListener('message', function(event) {
+                if (event.data.type === 'cleanup') {
+                    // Remove existing sketch
+                    if (sketch) {
+                        sketch.remove();
+                        sketch = null; 
                     }
-                } else if (event.data.type === 'codeUpdate') {
-                    // Remove all existing p5 instances and canvases
-                    if (window.remove) window.remove();
-                    document.querySelectorAll('canvas').forEach(c => c.remove());
-                    
-                    // Remove the existing sketch script
-                    const oldScript = document.getElementById('sketch');
-                    oldScript.remove();
-                    
-                    // Create and append new script element with updated code
-                    const newScript = document.createElement('script');
-                    newScript.id = 'sketch';
-                    newScript.type = 'text/javascript';
-                    newScript.textContent = event.data.code;
-                    document.body.appendChild(newScript);
+                }
+                else if (event.data.type === 'codeUpdate') {
+                    try {
+                        // Create new sketch
+                        const sketchFunction = new Function(event.data.code);
+                        sketch = new p5(sketchFunction);
+                        document.getElementById("defaultCanvas1").remove();
+                    } catch (error) {
+                        console.error('Error running sketch:', error);
+                    }
+                }
+                else if (event.data.type === 'configUpdate') {
+                    // Handle config updates
+                    const parts = event.data.name.split('.');
+                    if (parts[0] === 'fx') {
+                        window[parts[0]] = window[parts[0]] || {};
+                        window[parts[0]][parts[1]] = event.data.value;
+                    }
                 }
             });
         </script>

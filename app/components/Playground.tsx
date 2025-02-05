@@ -179,34 +179,54 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
     }, '*');
   };
 
-  // Update runSketch to remove activeCode
+  // Update runSketch to properly clean up and reinitialize
   const runSketch = () => {
     console.log('Playground: Running sketch');
     
     try {
       setError(null);
-      new Function(pendingCode);
+      new Function(pendingCode); // Syntax check
+      
+      // Send message to remove existing sketch first
       iframeRef.current?.contentWindow?.postMessage({
-        type: 'codeUpdate',
-        code: pendingCode
+        type: 'cleanup'
       }, '*');
+
+      // Small delay to allow cleanup before rerunning
+      setTimeout(() => {
+        iframeRef.current?.contentWindow?.postMessage({
+          type: 'codeUpdate',
+          code: pendingCode
+        }, '*');
+      }, 50);
+      
     } catch (error) {
       console.error('Syntax error:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
     }
   };
 
-  // Update handleCodeChange to remove activeCode
+  // Update handleCodeChange to include cleanup
   const handleCodeChange = (code: string) => {
     setPendingCode(code);
     if (autoRun) {
       const timeoutId = setTimeout(() => {
         try {
-          new Function(code);
+          new Function(code); // Syntax check
+          
+          // Send cleanup message first
           iframeRef.current?.contentWindow?.postMessage({
-            type: 'codeUpdate',
-            code: code
+            type: 'cleanup'
           }, '*');
+
+          // Small delay to allow cleanup
+          setTimeout(() => {
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'codeUpdate',
+              code: code
+            }, '*');
+          }, 50);
+          
           setError(null);
         } catch (error) {
           console.error('Syntax error:', error);

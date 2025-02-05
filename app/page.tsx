@@ -9,7 +9,7 @@ async function getSketches() {
   const sketchesDir = path.join(process.cwd(), 'public', 'sketches');
   try {
     const files = await readdir(sketchesDir);
-    return files;
+    return files.filter(file => file !== '.DS_Store');
   } catch (error) {
     console.error('Error reading sketches directory:', error);
     return [];

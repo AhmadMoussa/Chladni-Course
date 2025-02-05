@@ -232,7 +232,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
             ref={iframeRef}
             className="w-full h-full border-none"
             title="p5-sketch"
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
           />
         </div>
 

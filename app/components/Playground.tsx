@@ -63,7 +63,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
           return prevVars;
         });
       })
-      .catch(_err => {
+      .catch(() => {
         console.log('No config file found or invalid JSON - continuing without config');
         setConfigVars([]); // Ensure configVars is empty array if no config
       });

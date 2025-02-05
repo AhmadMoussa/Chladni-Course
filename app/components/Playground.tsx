@@ -9,6 +9,7 @@ import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import type { MDXRemoteSerializeResult } from 'next-mdx-remote';
 
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js'
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
@@ -29,14 +30,11 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
     setIsMounted(true);
   }, []);
 
-  // pendingCode is what you edit, activeCode is what is
-  // currently running in the sketch.
+  // pendingCode is what you edit
   const [pendingCode, setPendingCode] = useState('');
-  const [activeCode, setActiveCode] = useState('');
   const [configVars, setConfigVars] = useState<ConfigVariable[]>([]);
-  const [htmlContent, setHtmlContent] = useState(''); // New state for HTML content
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [mdxContent, setMdxContent] = useState<any>(null);
+  const [mdxContent, setMdxContent] = useState<MDXRemoteSerializeResult | null>(null);
   const [sketchTitle, setSketchTitle] = useState('Sketch'); // Add state for title
 
   // Add autoRun state
@@ -88,9 +86,12 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
       })
       .then((jsData) => {
         setPendingCode(jsData);
-        // Only set activeCode on initial load if autoRun is true
+        // Remove the activeCode setting
         if (autoRun) {
-          setActiveCode(jsData);
+          iframeRef.current?.contentWindow?.postMessage({
+            type: 'codeUpdate',
+            code: jsData
+          }, '*');
         }
       })
       .catch((err) => console.error(err));
@@ -103,8 +104,9 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
         }
         return response.text();
       })
-      .then((html) => {
-        setHtmlContent(html);
+      .then(() => {
+        // Remove html parameter since we're not using it
+        // The iframe src is set directly to the HTML file path
       })
       .catch((err) => console.error(err));
 
@@ -129,7 +131,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
         console.log('No content.mdx file found - continuing without documentation');
         setMdxContent(null);
       });
-  }, [sketchPath]);
+  }, [sketchPath, autoRun]);
 
   // Effect to update the global config variables when slider/toggle values change.
   useEffect(() => {
@@ -177,50 +179,38 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
     }, '*');
   };
 
-  // Modified handler for "Run Sketch" button
+  // Update runSketch to remove activeCode
   const runSketch = () => {
     console.log('Playground: Running sketch');
     
     try {
-      // Clear any previous errors
       setError(null);
-      
-      // Test if code is valid JavaScript
       new Function(pendingCode);
-      
-      // Only send to iframe if no syntax error
       iframeRef.current?.contentWindow?.postMessage({
         type: 'codeUpdate',
         code: pendingCode
       }, '*');
-      setActiveCode(pendingCode);
     } catch (error) {
       console.error('Syntax error:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-      // Don't send broken code to iframe
     }
   };
 
-  // Modify the Editor's onValueChange handler
+  // Update handleCodeChange to remove activeCode
   const handleCodeChange = (code: string) => {
     setPendingCode(code);
     if (autoRun) {
-      // Add a small delay to prevent too frequent updates
       const timeoutId = setTimeout(() => {
         try {
-          // Test if code is valid JavaScript
           new Function(code);
-          // Only send to iframe if no syntax error
           iframeRef.current?.contentWindow?.postMessage({
             type: 'codeUpdate',
             code: code
           }, '*');
-          setActiveCode(code);
-          setError(null); // Clear error if code is valid
+          setError(null);
         } catch (error) {
           console.error('Syntax error:', error);
           setError(error instanceof Error ? error.message : 'Unknown error');
-          // Don't send broken code to iframe
         }
       }, 100);
       return () => clearTimeout(timeoutId);

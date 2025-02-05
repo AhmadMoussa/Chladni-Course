@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, forwardRef } from 'react';
+import React, { useEffect, forwardRef } from 'react';
 
 interface P5FrameProps {
   htmlContent: string;

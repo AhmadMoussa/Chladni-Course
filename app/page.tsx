@@ -2,7 +2,6 @@
 import React from 'react';
 import { readdir } from 'fs/promises';
 import path from 'path';
-import P5Playground from './components/Playground';
 import SketchSelector from './components/SketchSelector';
 
 // Function to get sketches

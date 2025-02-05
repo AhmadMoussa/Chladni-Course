@@ -37,12 +37,6 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
   // Add autoRun state
   const [autoRun, setAutoRun] = useState(false);
 
-  // Add path validation
-  const validatePath = (path: string): boolean => {
-    // Prevent directory traversal and ensure path starts with /sketches/
-    return path.startsWith('/sketches/') && !path.includes('..');
-  };
-
 
   // Modify the fetch effect to also load the config file
   useEffect(() => {
@@ -100,8 +94,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
   useEffect(() => {
     configVars.forEach(({ name, value }) => {
       // Update the global variable so that the draw function sees the new value.
-      // (Because we patch the code to use window.[name] later.)
-      // @ts-ignore
+      // @ts-expect-error - Dynamic window property assignment with variable name
       window[name] = value;
     });
   }, [configVars]);
@@ -196,7 +189,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
   if (!isMounted) return null;
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <div className="h-full m-12 flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
       {/* Title Div: Spans full width */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
         <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">

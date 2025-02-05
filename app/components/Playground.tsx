@@ -128,7 +128,15 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
             }
           });
 
-          ${modifiedCode}
+          // Wait for p5.js to be fully loaded
+          window.addEventListener('load', () => {
+            // Ensure p5 is available
+            if (typeof window.p5 !== 'undefined') {
+              ${modifiedCode}
+            } else {
+              console.error('p5.js not loaded properly');
+            }
+          });
         </script>`
       );
 
@@ -189,7 +197,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
   if (!isMounted) return null;
 
   return (
-    <div className="h-full m-12 flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
       {/* Title Div: Spans full width */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
         <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">

@@ -11,6 +11,10 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        editor: {
+          bg: '#1e1e1e',
+          border: '#3c3c3c',
+        }
       },
     },
   },

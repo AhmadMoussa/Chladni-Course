@@ -45,7 +45,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   const copyEmbedCode = () => {
     // Safely get the host if available
     const host = typeof window !== 'undefined' ? window.location.origin : '';
-    const embedCode = `<iframe src="${host}${sketchPath}" width="600" height="400" frameborder="0" allowfullscreen></iframe>`;
+    const embedCode = `<iframe src="${host}/embed${sketchPath}" width="600" height="400" frameborder="0" allowfullscreen></iframe>`;
     
     navigator.clipboard.writeText(embedCode)
       .then(() => {
@@ -250,11 +250,11 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
         </div>
       </div>
 
-      {/* Main Content: Modified to include MDX and Code panels conditionally */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* MDX Documentation Panel - Hide on screens smaller than lg */}
-        <div className="hidden lg:block lg:w-[25%] border-r border-gray-200 dark:border-gray-700 overflow-auto">
-          <div className="p-4 prose dark:prose-invert prose-sm md:prose-base max-w-none">
+      {/* Main Content: Non-responsive (always horizontal) */}
+      <div className="flex-1 flex flex-row overflow-hidden">
+        {/* MDX Documentation Panel - Always visible */}
+        <div className="w-[25%] border-r border-gray-200 dark:border-gray-700 overflow-auto">
+          <div className="p-4 prose dark:prose-invert prose-sm max-w-none text-sm">
             {mdxContent ? (
               <MDXRemote {...mdxContent} />
             ) : (
@@ -263,9 +263,8 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
           </div>
         </div>
         
-        {/* Editor Panel - Hide on screens smaller than md */}
-        <div className="hidden md:flex flex-1 lg:w-[35%] border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700 flex flex-col">
-          {/* Add error display */}
+        {/* Editor Panel - Always visible */}
+        <div className="w-[35%] flex flex-col border-l border-r border-gray-200 dark:border-gray-700">
           {error && (
             <div className="px-4 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 text-sm">
               <p className="font-mono">{error}</p>
@@ -292,7 +291,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
         </div>
         
         {/* Sketch Panel - Always visible */}
-        <div className="h-[400px] lg:h-auto lg:w-[40%] bg-white dark:bg-gray-950 flex flex-col">
+        <div className="w-[40%] bg-white dark:bg-gray-950 flex flex-col">
           {annotation && (
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-100 dark:border-yellow-900/30">
               <p 
@@ -301,7 +300,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
               />
             </div>
           )}
-          <div className="w-full flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center">
             <iframe 
               ref={iframeRef}
               className="w-full h-full" 
@@ -313,7 +312,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
 
       {/* Controls Section */}
       <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-0 py-0">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 h-full">
+        <div className="flex items-center gap-4 h-full">
           <button
             onClick={runSketch}
             className="bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors font-medium text-sm m-0 h-full"

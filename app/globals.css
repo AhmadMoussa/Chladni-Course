@@ -86,3 +86,8 @@ body {
   transition: box-shadow 0.2s ease;
 }
 
+/* styles/mdxContent.css */
+.mdx-small {
+  font-size: 12px; /* Adjust this value as needed */
+}
+

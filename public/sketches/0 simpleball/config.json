@@ -1,5 +1,6 @@
 {
     "title": "Bouncing Ball Example",
+    "annotation": "Example of an annotation text",
     "sliders": [
         {
             "name": "ballSize",

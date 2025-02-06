@@ -35,7 +35,7 @@ const SketchSelector: React.FC<SketchSelectorProps> = ({ initialSketches }) => {
         </div>
       </div>
 
-      <div className="flex-1 p-12">
+      <div className="flex-1 m-8">
         <P5Playground sketchPath={`/sketches/${selectedSketch}`} />
       </div>
     </>

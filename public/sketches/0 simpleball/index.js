@@ -1,7 +1,3 @@
-// simple ball bouncing in a box
-
-
-
 function setup() {
   
   x = 100;
@@ -34,4 +30,8 @@ function draw() {
   if (y > height - size/2 || y < size/2) {
     yspeed = -yspeed;
   }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }

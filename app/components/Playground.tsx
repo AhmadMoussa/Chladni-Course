@@ -43,6 +43,9 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
   // Add error state
   const [error, setError] = useState<string | null>(null);
 
+  // Add annotation state
+  const [annotation, setAnnotation] = useState<string | null>(null);
+
   // Modify the fetch effect to also load the config file
   useEffect(() => {
     // Reset configVars when sketchPath changes
@@ -61,19 +64,33 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
         if (config.title) {
           setSketchTitle(config.title);
         }
-        // Always set config vars from config file, remove the prevVars check
-        setConfigVars(config.sliders.map(slider => ({
+        // Add annotation handling
+        if (config.annotation) {
+          setAnnotation(config.annotation);
+        }
+        
+        const sliderVars = config.sliders?.map(slider => ({
           name: slider.name,
           value: slider.initial,
           type: 'number',
           min: slider.min,
           max: slider.max,
           step: slider.step
-        })));
+        })) || [];
+
+        const toggleVars = config.toggles?.map(toggle => ({
+          name: toggle.name,
+          value: toggle.initial,
+          type: 'boolean',
+          label: toggle.label
+        })) || [];
+
+        setConfigVars([...sliderVars, ...toggleVars]);
       })
       .catch(() => {
         console.log('No config file found or invalid JSON - continuing without config');
         setConfigVars([]); // Ensure configVars is empty array if no config
+        setAnnotation(null);  // Reset annotation on error
       });
 
     // Fetch the index.js file for the editor
@@ -272,35 +289,41 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
           )}
           <div className="flex-1 px-4 relative">
             <div className="absolute inset-0 overflow-auto">
-              <div className="relative" style={{ minHeight: '300px' }}>
-                <Editor
-                  value={pendingCode}
-                  onValueChange={handleCodeChange}
-                  highlight={(code) =>
-                    highlight(code, languages.javascript, 'javascript')
-                  }
-                  padding={10}
-                  className="w-full font-mono text-sm bg-editor-bg text-gray-200 border border-editor-border line-numbers"
-                  style={{
-                    fontFamily: 'var(--font-geist-mono)',
-                    fontSize: '12px',
-                    minHeight: '300px'
-                  }}
-                  preClassName="line-numbers"
-                />
-              </div>
+              <Editor
+                value={pendingCode}
+                onValueChange={handleCodeChange}
+                highlight={(code) =>
+                  highlight(code, languages.javascript, 'javascript')
+                }
+                padding={10}
+                className="w-full min-h-full font-mono text-sm bg-editor-bg text-gray-200 border border-editor-border line-numbers"
+                style={{
+                  fontFamily: 'var(--font-geist-mono)',
+                  fontSize: '14px',
+                }}
+                preClassName="line-numbers"
+              />
             </div>
           </div>
         </div>
         
         {/* Sketch Panel - Now 40% on large screens */}
-        <div className="h-[400px] lg:h-auto lg:w-[40%] bg-white dark:bg-gray-950 flex items-center justify-center">
-          {/* Add ref to the iframe */}
-          <iframe 
-            ref={iframeRef}
-            className="w-full h-full" 
-            src={`${sketchPath}/index.html`} 
-          />
+        <div className="h-[400px] lg:h-auto lg:w-[40%] bg-white dark:bg-gray-950 flex flex-col">
+          {annotation && (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-100 dark:border-yellow-900/30">
+              <p 
+                className="text-sm text-yellow-800 dark:text-yellow-200"
+                dangerouslySetInnerHTML={{ __html: annotation }}
+              />
+            </div>
+          )}
+          <div className="w-full flex-1 flex items-center justify-center">
+            <iframe 
+              ref={iframeRef}
+              className="w-full h-full" 
+              src={`${sketchPath}/index.html`} 
+            />
+          </div>
         </div>
       </div>
 

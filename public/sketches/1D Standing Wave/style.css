@@ -1,18 +1,28 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+}
+
 main {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background-color: #222;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end; /* Align items to the bottom */
-    padding: 0;
-  }
-  
-  canvas {
-    object-fit: contain;
-    max-height: 90%; /* Adjust max-height to leave space for sliders */
-    max-width: 100%;
-  }
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: #222;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+canvas {
+  display: block !important;
+  margin: 0 auto !important;
+  object-fit: contain;
+  max-height: 100%;
+  max-width: 100%;
+}

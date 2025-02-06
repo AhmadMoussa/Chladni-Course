@@ -9,23 +9,25 @@ interface ConfigControlsProps {
 
 const ConfigControls: React.FC<ConfigControlsProps> = ({ configVars, onConfigChange }) => {
   return (
-    <Box sx={{ display: 'flex', flexWrap: '', gap: 10 }}>
+    <Box sx={{ display: 'flex', flexWrap: '', gap: 5 }}>
       {configVars.map((config) => (
-        <FormControl key={config.name} sx={{ minWidth: 200 }}>
+        <FormControl key={config.name} sx={{ minWidth: 200, backgroundColor: '#444', paddingTop: 1, paddingBottom: 1, paddingLeft: 2, paddingRight: 2, borderRadius: 2 }}>
           {config.type === 'number' && (
             <Box sx={{ width: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 0.5 }}>
+                
+                
+                <Typography variant="body2" color="#FFFFFF">
+                    {config.name}
+                  </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', flex: 1, gap: 1.5 }}>
                 <Typography variant="body2" sx={{ minWidth: 8 }}>
                   {config.min}
                 </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <Typography variant="body2" color="text.primary">
-                    {config.name}
-                  </Typography>
                   <Slider
                     size="medium"
                     sx={{
-                      width: '200px',
+                      width: '100px',
                       '& .MuiSlider-thumb': {
                         width: 10,
                         height: 10,
@@ -39,10 +41,11 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({ configVars, onConfigCha
                     onChange={(_, value) => onConfigChange(config.name, value as number)}
                     valueLabelDisplay="auto"
                   />
-                </Box>
-                <Typography variant="body2" sx={{ minWidth: 10 }}>
+                  <Typography variant="body2" sx={{ minWidth: 10 }}>
                   {config.max}
                 </Typography>
+                </Box>
+                
               </Box>
             </Box>
           )}
@@ -56,8 +59,8 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({ configVars, onConfigCha
                 />
               }
               label={
-                <Typography variant="body2" color="text.secondary">
-                  {config.name}: {String(config.value)}
+                <Typography variant="body2" color="#FFFFFF">
+                  {config.name}
                 </Typography>
               }
             />

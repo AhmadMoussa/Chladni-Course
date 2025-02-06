@@ -1,42 +1,17 @@
-let amplitude, wavelength, angularFrequency; // Wave parameters
-let sliderA, sliderW, sliderF; // Sliders for control
-let time = 0;
-let showTravelingWaves = false;  // Add this with other global variables
-let toggleButton;  // Add this with other global variables
-let labelA, labelW, labelF; // Add these with other global variables
-let legendDiv;
-
 function setup() {
   createCanvas(800, 400);
   
-  // Add toggle button
-  toggleButton = createButton('Show Traveling Waves');
-  toggleButton.position(20, 110);
-  toggleButton.mousePressed(() => {
-    showTravelingWaves = !showTravelingWaves;
-    toggleButton.html(showTravelingWaves ? 'Hide Traveling Waves' : 'Show Traveling Waves');
-  });
-  
-  // Add legend div after other UI elements
-  legendDiv = createDiv()
-    .position(20, 140)
-    .style('color', '#000')
-    .style('font-family', 'Arial')
-    .style('background-color', 'rgba(255, 255, 255, 0.8)')
-    .style('padding', '8px')
-    .style('border-radius', '3px')
-    .style('width', '400px')
-    .style('margin-top', '10px')
-    .html('<span style="color: red">■</span> Nodes: Points of no movement<br>' +
-          '<span style="color: #00ff00">■</span> Antinodes: Points of maximum movement');
+  time = 0;
 }
 
 function draw() {
   // Update parameters from sliders
   amplitude = fx.amplitude;
-  let numberOfWaves = fx.wavelength;
-  let k = (numberOfWaves * TWO_PI) / width;
+  numberOfWaves = fx.wavelength;
+  k = (numberOfWaves * TWO_PI) / width;
   angularFrequency = fx.frequency;
+  
+  showTravelingWaves = fx.showTravelingWaves;
   
   background(220);
   translate(0, height/2);
@@ -86,8 +61,6 @@ function draw() {
     }
   }
   
-
-  
   // Add traveling waves visualization
   if (showTravelingWaves) {
     // Right-traveling wave
@@ -108,18 +81,6 @@ function draw() {
       vertex(x, -y);
     }
     endShape();
-    
-  }
-  
-  // Update legend for traveling waves
-  if (showTravelingWaves) {
-    legendDiv.html('<span style="color: black">■</span> Nodes: Points of no movement<br>' +
-                  '<span style="color: black">↑↓</span> Antinodes: Points of maximum movement<br>' +
-                  '<span style="color: blue">■</span> Right-traveling wave<br>' +
-                  '<span style="color: red">■</span> Left-traveling wave');
-  } else {
-    legendDiv.html('<span style="color: black">■</span> Nodes: Points of no movement<br>' +
-                  '<span style="color: black">↑↓</span> Antinodes: Points of maximum movement');
   }
   
   // Add time update at the end of draw()

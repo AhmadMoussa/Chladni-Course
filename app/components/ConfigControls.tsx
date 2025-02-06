@@ -9,20 +9,26 @@ interface ConfigControlsProps {
 
 const ConfigControls: React.FC<ConfigControlsProps> = ({ configVars, onConfigChange }) => {
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', marginLeft: 'auto' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        marginLeft: 'auto',
+        backgroundColor: 'var(--bg-color)',
+        color: 'var(--font-color)'
+      }}
+    >
       {configVars.map((config) => (
         console.log(config),
         <FormControl
           key={config.name}
           sx={{
-            borderColor: '#000000',
-            paddingTop: 1,
-            paddingBottom: 1,
-            paddingLeft: 2,
-            paddingRight: 2,
-            alignSelf: 'flex-end',
-            margin: 0,
-            padding: 0
+            borderLeft: '1px solid var(--border-color)',
+            backgroundColor: 'var(--bg-color)',
+            borderRadius: 0,
+            m: 0,
+            p: 1,
+            alignSelf: 'flex-end'
           }}
         >
           {config.type === 'number' && (
@@ -35,7 +41,11 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({ configVars, onConfigCha
                 padding: '8px 16px'
               }}
             >
-              <Typography variant="caption" color="#FFFFFF" sx={{ mb: 0, fontSize: '0.65rem', lineHeight: 1.75 }}>
+              <Typography
+                variant="caption"
+                color="var(--font-color)"
+                sx={{ mb: 0, fontSize: '0.65rem', lineHeight: 1.75 }}
+              >
                 {config.label}
               </Typography>
               <Slider
@@ -44,40 +54,46 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({ configVars, onConfigCha
                   width: '120px',
                   '& .MuiSlider-thumb': {
                     width: 10,
-                    height: 10,
+                    height: 10
                   },
                   '& .MuiSlider-track': {
-                    color: '#000000',
+                    color: 'var(--font-color)',
                     height: 2,
-                    borderRadius: 0,
+                    borderRadius: 0
                   },
                   '& .MuiSlider-valueLabel': {
                     fontSize: '0.6rem',
-                    lineHeight: 1.5,
+                    lineHeight: 1.5
                   },
                   mb: 0,
-                  pb: 0,
+                  pb: 0
                 }}
                 min={config.min ?? 0}
                 max={config.max ?? 100}
                 step={config.step ?? 1}
-                marks={true}
+                marks
                 value={config.value as number}
                 onChange={(_, value) => onConfigChange(config.name, value as number)}
                 valueLabelDisplay="auto"
               />
-              
-              <Box sx={{ width: '100px', display: 'flex', justifyContent: 'space-between', mt: '-4px' }}>
-                <Typography 
-                  variant="caption" 
-                  color="#FFFFFF" 
+              <Box
+                sx={{
+                  width: '100px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  mt: '-4px'
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  color="var(--font-color)"
                   sx={{ fontSize: '0.6rem', lineHeight: 1.5 }}
                 >
                   {config.min}
                 </Typography>
-                <Typography 
-                  variant="caption" 
-                  color="#FFFFFF" 
+                <Typography
+                  variant="caption"
+                  color="var(--font-color)"
                   sx={{ fontSize: '0.6rem', lineHeight: 1.5 }}
                 >
                   {config.max}
@@ -92,10 +108,33 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({ configVars, onConfigCha
                   checked={config.value as boolean}
                   onChange={(e) => onConfigChange(config.name, e.target.checked)}
                   color="primary"
+                  sx={{
+                    '& .MuiSwitch-switchBase': {
+                      padding: 1
+                    },
+                    '& .MuiSwitch-thumb': {
+                      boxShadow: 'none',
+                      backgroundColor: 'var(--font-color)',
+                      borderRadius: 10,
+                      width: '8px',
+                      height: '8px',
+                      padding: 'auto',
+                      margin: 'auto'
+                    },
+                    '& .MuiSwitch-track': {
+                      backgroundColor: 'var(--bg-color)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 10,
+                      width: '28px',
+                      height: '8px',
+                      padding: 'auto',
+                      margin: 'auto'
+                    },
+                  }}
                 />
               }
               label={
-                <Typography variant="body2" color="#FFFFFF">
+                <Typography variant="body2" color="var(--font-color)">
                   {config.label ?? config.name}
                 </Typography>
               }

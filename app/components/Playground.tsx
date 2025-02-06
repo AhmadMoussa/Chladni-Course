@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-javascript';
-import 'prism-themes/themes/prism-shades-of-purple.css';
+import 'prism-themes/themes/prism-gruvbox-light.css';
 import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import remarkMath from 'remark-math';
@@ -59,6 +59,17 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   useEffect(() => {
     setConfigVars([]);
     
+    // Create a new iframe when sketch changes
+    const newIframe = document.createElement('iframe');
+    newIframe.className = 'w-full h-full';
+    newIframe.src = `${sketchPath}/index.html`;
+
+    // Replace the old iframe with the new one
+    if (iframeRef.current?.parentNode) {
+      iframeRef.current.parentNode.replaceChild(newIframe, iframeRef.current);
+      iframeRef.current = newIframe;
+    }
+    
     fetch(`${sketchPath}/config.json`)
       .then(response => {
         if (!response.ok) {
@@ -109,10 +120,15 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       .then((jsData) => {
         setPendingCode(jsData);
         if (autoRun) {
-          iframeRef.current?.contentWindow?.postMessage({
-            type: 'codeUpdate',
-            code: jsData
-          }, '*');
+          // Wait for the new iframe to load before sending code
+          newIframe.onload = () => {
+            setTimeout(() => {
+              iframeRef.current?.contentWindow?.postMessage({
+                type: 'codeUpdate',
+                code: jsData
+              }, '*');
+            }, 50);
+          };
         }
       })
       .catch((err) => console.error(err));
@@ -187,16 +203,36 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
     try {
       setError(null);
       new Function(pendingCode);
-      iframeRef.current?.contentWindow?.postMessage({
-        type: 'cleanup'
-      }, '*');
 
-      setTimeout(() => {
-        iframeRef.current?.contentWindow?.postMessage({
-          type: 'codeUpdate',
-          code: pendingCode
-        }, '*');
-      }, 50);
+      // Create a new iframe element
+      const newIframe = document.createElement('iframe');
+      newIframe.className = 'w-full h-full';
+      newIframe.src = `${sketchPath}/index.html`;
+
+      // Replace the old iframe with the new one
+      if (iframeRef.current?.parentNode) {
+        iframeRef.current.parentNode.replaceChild(newIframe, iframeRef.current);
+        iframeRef.current = newIframe;
+
+        // Wait for the new iframe to load before sending the code
+        newIframe.onload = () => {
+          setTimeout(() => {
+            iframeRef.current?.contentWindow?.postMessage({
+              type: 'codeUpdate',
+              code: pendingCode
+            }, '*');
+
+            // Reapply config variables
+            configVars.forEach(({ name, value }) => {
+              iframeRef.current?.contentWindow?.postMessage({
+                type: 'configUpdate',
+                name: `fx.${name}`,
+                value
+              }, '*');
+            });
+          }, 50);
+        };
+      }
       
     } catch (error) {
       console.error('Syntax error:', error);
@@ -233,40 +269,45 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   };
 
   return (
-    <div className={`${isEmbedded ? 'h-screen' : 'h-full'} flex flex-col bg-white dark:bg-gray-800 shadow-lg overflow-hidden`}>
+    <div className={`${isEmbedded ? 'h-screen' : 'h-full'} flex flex-col overflow-hidden`}
+         style={{
+           backgroundColor: 'var(--bg-color)',
+           color: 'var(--font-color)',
+           border: `1px solid var(--border-color)`
+         }}>
       {/* Title Div: Spans full width */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
-        <h2 className="text-m font-bold text-gray-700 dark:text-gray-300">
+      <div className="p-4 border-b border-black bg-white flex items-center justify-between">
+        <h2 className="text-m font-bold text-black">
           {sketchTitle}
         </h2>
-        {/* Updated Copy Embed Code button */}
+        {/* Copy Embed Code button */}
         <div className="flex items-center gap-2">
           <button
             onClick={copyEmbedCode}
-            className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md"
+            className="bg-white border border-black text-black px-2 py-1 hover:bg-[#16DF81] hover:text-white"
           >
             {copied ? 'Copied!' : 'Copy Embed Code'}
           </button>
         </div>
       </div>
 
-      {/* Main Content: Non-responsive (always horizontal) */}
+      {/* Main Content: Always horizontal */}
       <div className="flex-1 flex flex-row overflow-hidden">
-        {/* MDX Documentation Panel - Always visible */}
-        <div className="w-[25%] border-r border-gray-200 dark:border-gray-700 overflow-auto">
-          <div className="p-4 prose dark:prose-invert prose-sm max-w-none text-sm">
+        {/* MDX Documentation Panel */}
+        <div className="w-[25%] border-r border-black overflow-auto">
+          <div className="p-4 text-black prose max-w-none text-sm">
             {mdxContent ? (
               <MDXRemote {...mdxContent} />
             ) : (
-              <p className="text-gray-500 dark:text-gray-400">No documentation available</p>
+              <p className="text-black">No documentation available</p>
             )}
           </div>
         </div>
         
-        {/* Editor Panel - Always visible */}
-        <div className="w-[35%] flex flex-col border-l border-r border-gray-200 dark:border-gray-700">
+        {/* Editor Panel */}
+        <div className="w-[35%] flex flex-col ">
           {error && (
-            <div className="px-4 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 text-sm">
+            <div className="px-4 py-2 bg-red text-black text-sm">
               <p className="font-mono">{error}</p>
             </div>
           )}
@@ -279,23 +320,19 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
                   highlight(code, languages.javascript, 'javascript')
                 }
                 padding={10}
-                className="w-full min-h-full font-mono text-sm bg-editor-bg text-gray-200 border border-editor-border line-numbers"
-                style={{
-                  fontFamily: 'var(--font-fira-code)',
-                  fontSize: '14px',
-                }}
+                className="w-full min-h-full font-mono border line-numbers text-sm"
                 preClassName="line-numbers"
               />
             </div>
           </div>
         </div>
         
-        {/* Sketch Panel - Always visible */}
-        <div className="w-[40%] bg-white dark:bg-gray-950 flex flex-col">
+        {/* Sketch Panel */}
+        <div className="w-[40%] bg-white flex flex-col border-l border-black">
           {annotation && (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-100 dark:border-yellow-900/30">
+            <div className="p-4 bg-white border-b border-black">
               <p 
-                className="text-sm text-yellow-800 dark:text-yellow-200"
+                className="text-sm text-black"
                 dangerouslySetInnerHTML={{ __html: annotation }}
               />
             </div>
@@ -311,20 +348,20 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       </div>
 
       {/* Controls Section */}
-      <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-0 py-0">
+      <div className="bg-white border-t border-black px-0 py-0">
         <div className="flex items-center gap-4 h-full">
           <button
             onClick={runSketch}
-            className="bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors font-medium text-sm m-0 h-full"
+            className="bg-white border border-r-black text-black px-4 py-2 hover:bg-[#814EF9] hover:text-white transition-colors font-medium text-sm m-0 h-full"
           >
             Run Sketch
           </button>
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <label className="flex items-center gap-2 text-sm text-black">
             <input
               type="checkbox"
               checked={autoRun}
               onChange={(e) => setAutoRun(e.target.checked)}
-              className="form-checkbox h-4 w-4 text-blue-600 rounded"
+              className="form-checkbox h-4 w-4 text-black"
             />
             <span>Auto-run</span>
           </label>

@@ -5,6 +5,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+
+  --bg-color: #FFFFFF;
+  --font-color: #000000;
+  --border-color: #000000;
+  --highlight-color-1: #814EF9;
+  --highlight-color-2: #16DF81;
+ 
 }
 
 @media (prefers-color-scheme: dark) {

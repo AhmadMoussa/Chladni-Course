@@ -21,12 +21,10 @@
                 }
                 else if (event.data.type === 'codeUpdate') {
                     try {
-                        //document.getElementById("defaultCanvas0").remove();
-                        
                         // Create new sketch
                         const sketchFunction = new Function(event.data.code);
                         sketch = new p5(sketchFunction);
-                        
+                        document.getElementById("defaultCanvas1").remove();
                     } catch (error) {
                         console.error('Error running sketch:', error);
                     }

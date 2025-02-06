@@ -44,7 +44,6 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   useEffect(() => {
     setConfigVars([]);
     
-
     fetch(`${sketchPath}/config.json`)
       .then(response => {
         if (!response.ok) {
@@ -240,10 +239,10 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
         </h2>
       </div>
 
-      {/* Main Content: Modified to include MDX panel */}
+      {/* Main Content: Modified to include MDX and Code panels conditionally */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* MDX Documentation Panel - 25% width on large screens */}
-        <div className="lg:w-[25%] border-r border-gray-200 dark:border-gray-700 overflow-auto">
+        {/* MDX Documentation Panel - Hide on screens smaller than lg */}
+        <div className="hidden lg:block lg:w-[25%] border-r border-gray-200 dark:border-gray-700 overflow-auto">
           <div className="p-4 prose dark:prose-invert prose-sm md:prose-base max-w-none">
             {mdxContent ? (
               <MDXRemote {...mdxContent} />
@@ -253,8 +252,8 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
           </div>
         </div>
         
-        {/* Editor Panel - Now 35% on large screens */}
-        <div className="flex-1 lg:w-[35%] border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-700 flex flex-col">
+        {/* Editor Panel - Hide on screens smaller than md */}
+        <div className="hidden md:flex flex-1 lg:w-[35%] border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700 flex flex-col">
           {/* Add error display */}
           {error && (
             <div className="px-4 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 text-sm">
@@ -281,7 +280,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
           </div>
         </div>
         
-        {/* Sketch Panel - Now 40% on large screens */}
+        {/* Sketch Panel - Always visible */}
         <div className="h-[400px] lg:h-auto lg:w-[40%] bg-white dark:bg-gray-950 flex flex-col">
           {annotation && (
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-100 dark:border-yellow-900/30">

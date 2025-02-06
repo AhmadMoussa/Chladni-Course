@@ -72,7 +72,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
         const sliderVars = config.sliders?.map(slider => ({
           name: slider.name,
           value: slider.initial,
-          type: 'number',
+          type: 'number' as const,
           min: slider.min,
           max: slider.max,
           step: slider.step
@@ -81,7 +81,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
         const toggleVars = config.toggles?.map(toggle => ({
           name: toggle.name,
           value: toggle.initial,
-          type: 'boolean',
+          type: 'boolean' as const,
           label: toggle.label
         })) || [];
 

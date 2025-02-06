@@ -11,6 +11,7 @@ export interface SliderConfig {
   max: number;
   step: number;
   initial: number;
+  label: string;
 }
 
 export interface ToggleConfig {
@@ -21,10 +22,10 @@ export interface ToggleConfig {
 
 export interface ConfigVariable {
   name: string;
-  value: number | boolean;
   type: 'number' | 'boolean';
+  value: number | boolean;
   min?: number;
   max?: number;
   step?: number;
-  label?: string;
+  label: string;
 } 

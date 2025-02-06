@@ -1,33 +1,25 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { Fira_Code } from 'next/font/google';
+import './globals.css';
 import 'katex/dist/katex.min.css';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const firaCode = Fira_Code({
+  subsets: ['latin'],
+  variable: '--font-fira-code',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Code Embed Demo",
-  description: "Simple demo page for code embeds",
+export const metadata = {
+  title: 'Code Embed Demo',
+  description: 'Simple demo page for code embeds',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${firaCode.className} ${firaCode.variable} antialiased`}>
         {children}
       </body>
     </html>

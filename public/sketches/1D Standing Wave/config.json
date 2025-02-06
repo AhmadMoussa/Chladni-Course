@@ -7,21 +7,24 @@
             "min": 10,
             "max": 100,
             "step": 1,
-            "initial": 50
+            "initial": 50,
+            "label": "Amplitude"
         },
         {
             "name": "wavelength",
             "min": 1,
             "max": 10,
             "step": 1,
-            "initial": 3
+            "initial": 3,
+            "label": "Wavelength"
         },
         {
             "name": "frequency",     
             "min": 0,
             "max": 5,
             "step": 0.1,
-            "initial": 2
+            "initial": 2,
+            "label": "Frequency"
         }
     ],
     "toggles": [

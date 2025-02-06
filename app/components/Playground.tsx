@@ -33,13 +33,28 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   const [configVars, setConfigVars] = useState<ConfigVariable[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mdxContent, setMdxContent] = useState<MDXRemoteSerializeResult | null>(null);
-  const [sketchTitle, setSketchTitle] = useState('Sketch'); // Add state for title
-
+  const [sketchTitle, setSketchTitle] = useState('Sketch');
   const [autoRun, setAutoRun] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
-
   const [annotation, setAnnotation] = useState<string | null>(null);
+
+  // New state to manage copy feedback
+  const [copied, setCopied] = useState(false);
+
+  // Function to copy the embed code snippet into the clipboard
+  const copyEmbedCode = () => {
+    // Safely get the host if available
+    const host = typeof window !== 'undefined' ? window.location.origin : '';
+    const embedCode = `<iframe src="${host}${sketchPath}" width="600" height="400" frameborder="0" allowfullscreen></iframe>`;
+    
+    navigator.clipboard.writeText(embedCode)
+      .then(() => {
+        setCopied(true);
+        // Reset the copied state after 2 seconds
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(err => console.error("Failed to copy embed code:", err));
+  };
 
   useEffect(() => {
     setConfigVars([]);
@@ -65,7 +80,8 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
           type: 'number' as const,
           min: slider.min,
           max: slider.max,
-          step: slider.step
+          step: slider.step,
+          label: slider.label
         })) || [];
 
         const toggleVars = config.toggles?.map(toggle => ({
@@ -79,11 +95,10 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       })
       .catch(() => {
         console.log('No config file found or invalid JSON - continuing without config');
-        setConfigVars([]); // Ensure configVars is empty array if no config
-        setAnnotation(null);  // Reset annotation on error
+        setConfigVars([]);
+        setAnnotation(null);
       });
 
-    // Fetch the index.js file for the editor
     fetch(`${sketchPath}/index.js`)
       .then((response) => {
         if (!response.ok) {
@@ -93,7 +108,6 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       })
       .then((jsData) => {
         setPendingCode(jsData);
-        // Remove the activeCode setting
         if (autoRun) {
           iframeRef.current?.contentWindow?.postMessage({
             type: 'codeUpdate',
@@ -103,7 +117,6 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       })
       .catch((err) => console.error(err));
 
-    // Add MDX fetch
     fetch(`${sketchPath}/content.mdx`)
       .then((response) => {
         if (!response.ok) {
@@ -126,7 +139,6 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       });
   }, [sketchPath, autoRun]);
 
-  // Effect to update the global config variables when slider/toggle values change.
   useEffect(() => {
     configVars.forEach(({ name, value }) => {
       iframeRef.current?.contentWindow?.postMessage({
@@ -137,7 +149,6 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
     });
   }, [configVars]);
 
-  // Add new effect to inject variables when iframe loads
   useEffect(() => {
     const handleIframeLoad = () => {
       configVars.forEach(({ name, value }) => {
@@ -156,15 +167,13 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
     }
   }, [configVars]);
 
-  // Update the config change handler to post messages to iframe
   const handleConfigChange = (name: string, value: number | boolean) => {
     setConfigVars((prev) =>
       prev.map((config) =>
         config.name === name ? { ...config, value } : config
       )
     );
-    
-    // Send message to iframe instead of setting window variable directly
+
     iframeRef.current?.contentWindow?.postMessage({
       type: 'configUpdate',
       name: `fx.${name}`,
@@ -172,20 +181,16 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
     }, '*');
   };
 
-  // Update runSketch to properly clean up and reinitialize
   const runSketch = () => {
     console.log('Playground: Running sketch');
     
     try {
       setError(null);
-      new Function(pendingCode); // Syntax check
-      
-      // Send message to remove existing sketch first
+      new Function(pendingCode);
       iframeRef.current?.contentWindow?.postMessage({
         type: 'cleanup'
       }, '*');
 
-      // Small delay to allow cleanup before rerunning
       setTimeout(() => {
         iframeRef.current?.contentWindow?.postMessage({
           type: 'codeUpdate',
@@ -199,20 +204,17 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
     }
   };
 
-  // Update handleCodeChange to include cleanup
   const handleCodeChange = (code: string) => {
     setPendingCode(code);
     if (autoRun) {
       const timeoutId = setTimeout(() => {
         try {
-          new Function(code); // Syntax check
+          new Function(code);
           
-          // Send cleanup message first
           iframeRef.current?.contentWindow?.postMessage({
             type: 'cleanup'
           }, '*');
 
-          // Small delay to allow cleanup
           setTimeout(() => {
             iframeRef.current?.contentWindow?.postMessage({
               type: 'codeUpdate',
@@ -231,12 +233,21 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   };
 
   return (
-    <div className={`${isEmbedded ? 'h-screen' : 'h-full'} flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden`}>
+    <div className={`${isEmbedded ? 'h-screen' : 'h-full'} flex flex-col bg-white dark:bg-gray-800 shadow-lg overflow-hidden`}>
       {/* Title Div: Spans full width */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-        <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+        <h2 className="text-m font-bold text-gray-700 dark:text-gray-300">
           {sketchTitle}
         </h2>
+        {/* Updated Copy Embed Code button */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={copyEmbedCode}
+            className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md"
+          >
+            {copied ? 'Copied!' : 'Copy Embed Code'}
+          </button>
+        </div>
       </div>
 
       {/* Main Content: Modified to include MDX and Code panels conditionally */}
@@ -271,7 +282,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
                 padding={10}
                 className="w-full min-h-full font-mono text-sm bg-editor-bg text-gray-200 border border-editor-border line-numbers"
                 style={{
-                  fontFamily: 'var(--font-geist-mono)',
+                  fontFamily: 'var(--font-fira-code)',
                   fontSize: '14px',
                 }}
                 preClassName="line-numbers"
@@ -301,11 +312,11 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       </div>
 
       {/* Controls Section */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-0 py-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 h-full">
           <button
             onClick={runSketch}
-            className="bg-blue-600 text-white rounded-md px-4 py-2 hover:bg-blue-700 transition-colors font-medium text-sm"
+            className="bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors font-medium text-sm m-0 h-full"
           >
             Run Sketch
           </button>

@@ -1,20 +1,22 @@
 {
     "title": "Bouncing Ball Example",
-    "annotation": "Example of an annotation text",
+    "annotation": "A ball that bounces off of the borders of the canvas. Modify the sliders to change the size and speed of the ball.",
     "sliders": [
         {
             "name": "ballSize",
             "min": 10,
             "max": 100,
             "step": 1,
-            "initial": 50
+            "initial": 50,
+            "label": "Ball Size"
         },
         {
             "name": "ballSpeed",
             "min": 0.1,
             "max": 3,
             "step": 0.1,
-            "initial": 1
+            "initial": 1,
+            "label": "Ball Speed"
         }
     ]
 }

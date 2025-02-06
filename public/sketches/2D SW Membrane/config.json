@@ -1,5 +1,6 @@
 {
     "title": "2D Standing Wave Formula: Standing Waves of 2D Surfaces",
+    "annotation": "",
     "sliders": [
         {
             "name": "amplitude",
@@ -9,11 +10,20 @@
             "initial": 50
         },
         {
-            "name": "wavelength",
-            "min": 0,
-            "max": 100,
+            "name": "n",
+            "min": 1,
+            "max": 15,
             "step": 1,
-            "initial": 50
+            "initial": 3,
+            "label": "Mode number X (n)"
+        },
+        {
+            "name": "m",
+            "min": 1,
+            "max": 15,
+            "step": 1,
+            "initial": 3,
+            "label": "Mode number Y (m)"
         }
     ]
 }   

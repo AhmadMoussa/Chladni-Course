@@ -1,69 +1,26 @@
-let cols = 16;
-let rows = 16;
-let time = 0;
-let angle = 0;
-
-// Control parameters
-let amplitude = 50;
-let n = 5;  // mode number x
-let m = 3;  // mode number y
-let omega = 1;  // angular frequency
-let phase = 0;
-
-// Add these with the other global variables at the top
-let labelA, labelN, labelM;
 
 function setup() {
+    
+    cols = 16;
+    rows = 16;
+    time = 0;
+    angle = 0;
+
+    omega = 1;  // angular frequency
+    phase = 0;
+
     createCanvas(600, 400, WEBGL);  // Change to WEBGL for main canvas
     
     frameRate(60);  // Add consistent frame rate
-    
-    // Create sliders with labels
-    sliderA = createSlider(10, 100, 50);
-    sliderA.position(20, 20);
-    labelA = createDiv()
-        .position(200, 20)
-        .style('color', '#000')
-        .style('font-family', 'Arial')
-        .style('background-color', 'rgba(255, 255, 255, 0.8)')
-        .style('padding', '3px 8px')
-        .style('border-radius', '3px')
-				.style('width', '180px');
-    
-    sliderN = createSlider(1, 8, 3, 1);
-    sliderN.position(20, 50);
-    labelN = createDiv()
-        .position(200, 50)
-        .style('color', '#000')
-        .style('font-family', 'Arial')
-        .style('background-color', 'rgba(255, 255, 255, 0.8)')
-        .style('padding', '3px 8px')
-        .style('border-radius', '3px').style('width', '180px');
-    
-    sliderM = createSlider(1, 8, 3, 1);
-    sliderM.position(20, 80);
-    labelM = createDiv()
-        .position(200, 80)
-        .style('color', '#000')
-        .style('font-family', 'Arial')
-        .style('background-color', 'rgba(255, 255, 255, 0.8)')
-        .style('padding', '3px 8px')
-        .style('border-radius', '3px').style('width', '180px');
 }
 
 function draw() {
     background(220);
     
     // Update parameters from sliders and update labels
-    amplitude = sliderA.value();
-    n = sliderN.value();
-    m = sliderM.value();
-    
-    // Update label texts
-    labelA.html(`Amplitude: ${amplitude}`);
-    labelN.html(`Mode number X (n): ${n}`);
-    labelM.html(`Mode number Y (m): ${m}`);
-    
+    amplitude = fx.amplitude;
+    n = fx.n;
+    m = fx.m;    
 
     push();
     camera(0, -600, 400, 0, 0, 0, 0, 1, 0);

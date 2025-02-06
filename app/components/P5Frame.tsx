@@ -25,29 +25,6 @@ const P5Frame = forwardRef<HTMLIFrameElement, P5FrameProps>(
           const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
           if (!iframeDoc) return;
 
-          // Remove the original script if it exists
-          const oldScript = iframeDoc.querySelector('script[src="index.js"]');
-          oldScript?.parentNode?.removeChild(oldScript);
-
-          // Create and append the message handler script
-          const messageScript = iframeDoc.createElement('script');
-          messageScript.textContent = `
-            window.addEventListener('message', function(event) {
-              if (event.data.type === 'codeUpdate') {
-                // Remove existing sketch script if any
-                const oldSketch = document.getElementById('sketch-script');
-                if (oldSketch) oldSketch.remove();
-                
-                // Create and append new sketch script
-                const sketchScript = document.createElement('script');
-                sketchScript.id = 'sketch-script';
-                sketchScript.textContent = event.data.code;
-                document.body.appendChild(sketchScript);
-              }
-            });
-          `;
-          iframeDoc.body.appendChild(messageScript);
-
           // Create and append the initial sketch script
           if (activeCode) {
             const sketchScript = iframeDoc.createElement('script');

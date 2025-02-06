@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react';
-import Editor from 'react-simple-code-editor';
+import dynamic from 'next/dynamic';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-javascript';
 import 'prism-themes/themes/prism-shades-of-purple.css';
@@ -17,41 +17,34 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
 import { ConfigVariable, Config } from './types';
 import ConfigControls from './ConfigControls';
 
+// Create a dynamic import for the Editor with SSR disabled
+const CodeEditor = dynamic(
+  () => import('react-simple-code-editor').then((mod) => mod.default),
+  { ssr: false }
+);
 
 interface P5PlaygroundProps {
-  // The path to the sketch directory (e.g. '/sketches/mySketch/')
   sketchPath: string;
+  isEmbedded?: boolean;
 }
 
-const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
-  // mounted flag to avoid hydration mismatch.
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // pendingCode is what you edit
+const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = false }) => {
   const [pendingCode, setPendingCode] = useState('');
   const [configVars, setConfigVars] = useState<ConfigVariable[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mdxContent, setMdxContent] = useState<MDXRemoteSerializeResult | null>(null);
   const [sketchTitle, setSketchTitle] = useState('Sketch'); // Add state for title
 
-  // Add autoRun state
   const [autoRun, setAutoRun] = useState(false);
 
-  // Add error state
   const [error, setError] = useState<string | null>(null);
 
-  // Add annotation state
   const [annotation, setAnnotation] = useState<string | null>(null);
 
-  // Modify the fetch effect to also load the config file
   useEffect(() => {
-    // Reset configVars when sketchPath changes
     setConfigVars([]);
     
-    // Fetch config.json first, but don't block other operations if it fails
+
     fetch(`${sketchPath}/config.json`)
       .then(response => {
         if (!response.ok) {
@@ -60,11 +53,9 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
         return response.json();
       })
       .then((config: Config) => {
-        // Set the title if it exists in config
         if (config.title) {
           setSketchTitle(config.title);
         }
-        // Add annotation handling
         if (config.annotation) {
           setAnnotation(config.annotation);
         }
@@ -110,20 +101,6 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
             code: jsData
           }, '*');
         }
-      })
-      .catch((err) => console.error(err));
-
-    // Fetch the index.html file for the iframe
-    fetch(`${sketchPath}/index.html`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to fetch index.html: ${response.statusText}`);
-        }
-        return response.text();
-      })
-      .then(() => {
-        // Remove html parameter since we're not using it
-        // The iframe src is set directly to the HTML file path
       })
       .catch((err) => console.error(err));
 
@@ -254,11 +231,8 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
     }
   };
 
-  // Only render after the component is mounted.
-  if (!isMounted) return null;
-
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <div className={`${isEmbedded ? 'h-screen' : 'h-full'} flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden`}>
       {/* Title Div: Spans full width */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
         <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">
@@ -289,7 +263,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath }) => {
           )}
           <div className="flex-1 px-4 relative">
             <div className="absolute inset-0 overflow-auto">
-              <Editor
+              <CodeEditor
                 value={pendingCode}
                 onValueChange={handleCodeChange}
                 highlight={(code) =>

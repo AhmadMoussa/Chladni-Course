@@ -1,6 +1,6 @@
 {
     "title": "2D Standing Wave Formula: Standing Waves of 2D Surfaces",
-    "annotation": "",
+    "annotation": "Vibrations on a 2D plate",
     "sliders": [
         {
             "name": "amplitude",

@@ -1,7 +1,7 @@
 function setup() {
   
-  x = 100;
-  y = 100;
+  x = random(20,380);
+  y = random(20,380);
   xspeed = 5;
   yspeed = 5;
 

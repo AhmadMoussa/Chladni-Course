@@ -44,7 +44,7 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({
           cursor: 'pointer',
           backgroundColor: 'var(--bg-color)',
         }}
-        onClick={onCollapse}
+        onClick={() => onCollapse?.()}
       >
         <Typography
           sx={{
@@ -65,17 +65,16 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({
       sx={{
         display: 'flex',
         flexDirection: 'row',
-        width: isVertical ? (isCollapsed ? '32px' : '200px') : 'auto',
+        width: isVertical ? (isCollapsed ? '32px' : '200px') : '100%',
         height: isVertical ? '100%' : 'auto',
         backgroundColor: 'var(--bg-color)',
         transition: 'width 0.3s',
         position: 'relative',
-        width: '100%',
       }}
     >
       {isVertical && (
         <VerticalCollapseButton
-          onClick={onCollapse}
+          onClick={() => onCollapse?.()}
           isCollapsed={isCollapsed}
           position="left"
         />

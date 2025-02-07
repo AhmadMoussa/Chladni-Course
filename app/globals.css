@@ -129,4 +129,27 @@ body {
   padding-left: 50px !important;
 }
 
+/* Add after your existing styles */
+.prose pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+.prose code {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Ensure code blocks don't overflow their container */
+.prose pre > code {
+  display: block;
+  padding: 1em;
+  overflow-x: auto;
+  border-radius: 0.375rem;
+  background-color: #f3f4f6;
+  max-width: 100%;
+}
+
 

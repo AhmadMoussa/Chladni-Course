@@ -16,6 +16,7 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
 
 import { ConfigVariable, Config } from './types';
 import ConfigControls from './ConfigControls';
+import VerticalCollapseButton from './VerticalCollapseButton';
 
 // Create a dynamic import for the Editor with SSR disabled
 const CodeEditor = dynamic(
@@ -312,7 +313,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       <div className="flex-1 flex overflow-hidden">
         {/* MDX Documentation Panel - Only show if mdxContent exists */}
         {mdxContent && (
-          <div className={`${isMdxCollapsed ? 'w-8' : 'w-[25%]'} transition-all duration-300 flex`}>
+          <div className={`${isMdxCollapsed ? 'w-8' : 'w-[25%]'} transition-all duration-300 flex min-w-0`}>
             <div className={`flex-1 border-r border-black overflow-hidden ${isMdxCollapsed ? 'bg-white' : ''}`}>
               {isMdxCollapsed ? (
                 <div 
@@ -325,18 +326,18 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
                   </span>
                 </div>
               ) : (
-                <div className="h-full flex">
-                  <div className="flex-1 relative">
+                <div className="h-full flex min-w-0">
+                  <div className="flex-1 relative min-w-0">
                     <div className="p-4 text-black prose max-w-none text-sm h-full overflow-y-auto">
-                      <MDXRemote {...mdxContent} />
+                      <div className="overflow-x-auto break-words pr-4 max-w-full">
+                        <MDXRemote {...mdxContent} />
+                      </div>
                     </div>
                   </div>
-                  <button
+                  <VerticalCollapseButton
                     onClick={() => setIsMdxCollapsed(true)}
-                    className="w-4 h-full border-l border-black bg-white hover:bg-gray-50 flex items-center justify-center"
-                  >
-                    ←
-                  </button>
+                    position="right"
+                  />
                 </div>
               )}
             </div>
@@ -418,30 +419,14 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
           {configOrientation === 'horizontal' && (
             <div className="bg-white border-t border-black px-0 py-0">
               <div className="flex items-center h-full">
-                <div className="flex items-center gap-4 h-full">
-                  <button
-                    onClick={runSketch}
-                    className="bg-white border border-r-black text-black px-4 py-2 hover:bg-[#814EF9] hover:text-white transition-colors font-medium text-sm m-0 h-full"
-                  >
-                    Run Sketch
-                  </button>
-                  <label className="flex items-center gap-2 text-sm text-black">
-                    <input
-                      type="checkbox"
-                      checked={autoRun}
-                      onChange={(e) => setAutoRun(e.target.checked)}
-                      className="form-checkbox h-4 w-4 text-black"
-                    />
-                    <span>Auto-run</span>
-                  </label>
-                </div>
-                <div className="ml-auto">
-                  <ConfigControls 
-                    configVars={configVars}
-                    onConfigChange={handleConfigChange}
-                    orientation="horizontal"
-                  />
-                </div>
+                <ConfigControls 
+                  configVars={configVars}
+                  onConfigChange={handleConfigChange}
+                  orientation="horizontal"
+                  autoRun={autoRun}
+                  onAutoRunChange={(checked) => setAutoRun(checked)}
+                  onRunSketch={runSketch}
+                />
               </div>
             </div>
           )}

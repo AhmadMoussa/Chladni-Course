@@ -1,5 +1,6 @@
 {
     "title": "Bouncing Ball Example",
+    "controlsOrientation": "horizontal",
     "annotation": "A ball that bounces off of the borders of the canvas. Modify the sliders to change the size and speed of the ball.",
     "sliders": [
         {

@@ -1,147 +1,308 @@
 import React from 'react';
 import { ConfigVariable } from './types';  // You'll need to move types to a separate file
-import { Box, Slider, Switch, FormControl, FormControlLabel, Typography } from '@mui/material';
+import Box from '@mui/material/Box';
+import Slider from '@mui/material/Slider';
+import Switch from '@mui/material/Switch';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Typography from '@mui/material/Typography';
 
 interface ConfigControlsProps {
   configVars: ConfigVariable[];
   onConfigChange: (name: string, value: number | boolean) => void;
+  orientation?: 'horizontal' | 'vertical';
+  isCollapsed?: boolean;
+  onCollapse?: () => void;
+  autoRun?: boolean;
+  onAutoRunChange?: (checked: boolean) => void;
+  onRunSketch?: () => void;
 }
 
-const ConfigControls: React.FC<ConfigControlsProps> = ({ configVars, onConfigChange }) => {
+const ConfigControls: React.FC<ConfigControlsProps> = ({ 
+  configVars, 
+  onConfigChange, 
+  orientation = 'horizontal',
+  isCollapsed = false,
+  onCollapse,
+  autoRun,
+  onAutoRunChange,
+  onRunSketch
+}) => {
+  const isVertical = orientation === 'vertical';
+
+  if (isVertical && isCollapsed) {
+    return (
+      <Box
+        sx={{
+          width: '32px',
+          height: '100%',
+          borderLeft: '1px solid var(--border-color)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          backgroundColor: 'var(--bg-color)',
+        }}
+        onClick={onCollapse}
+      >
+        <Typography
+          sx={{
+            writingMode: 'vertical-rl',
+            transform: 'rotate(180deg)',
+            color: 'var(--font-color)',
+            fontSize: '0.875rem'
+          }}
+        >
+          Controls
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
         display: 'flex',
-        flexWrap: 'wrap',
-        marginLeft: 'auto',
+        flexDirection: 'row',
+        width: isVertical ? (isCollapsed ? '32px' : '200px') : 'auto',
+        height: isVertical ? '100%' : 'auto',
         backgroundColor: 'var(--bg-color)',
-        color: 'var(--font-color)'
+        transition: 'width 0.3s',
+        position: 'relative',
       }}
     >
-      {configVars.map((config) => (
-        console.log(config),
-        <FormControl
-          key={config.name}
-          sx={{
-            borderLeft: '1px solid var(--border-color)',
-            backgroundColor: 'var(--bg-color)',
-            borderRadius: 0,
-            m: 0,
-            p: 1,
-            alignSelf: 'flex-end'
+      {isVertical && (
+        <button
+          onClick={onCollapse}
+          style={{
+            width: '16px',
+            height: '100%',
+            background: 'var(--bg-color)',
+            border: 'none',
+            borderRight: '1px solid var(--border-color)',
+            cursor: 'pointer',
+            color: 'var(--font-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0
           }}
         >
-          {config.type === 'number' && (
+          {isCollapsed ? '←' : '→'}
+        </button>
+      )}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          height: '100%',
+        }}
+      >
+        {isVertical ? (
+          <>
+            <Box sx={{ p: 2, borderBottom: '1px solid var(--border-color)' }}>
+              <Box sx={{ mb: 2 }}>
+                <button
+                  onClick={onRunSketch}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    backgroundColor: 'white',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--font-color)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Run Sketch
+                </button>
+              </Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={autoRun}
+                    onChange={(e) => onAutoRunChange?.(e.target.checked)}
+                    size="small"
+                  />
+                }
+                label={
+                  <Typography variant="body2" color="var(--font-color)">
+                    Auto-run
+                  </Typography>
+                }
+              />
+            </Box>
+            <Box sx={{ flex: 1 }} /> {/* Spacer */}
             <Box
               sx={{
-                width: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'flex-start',
-                padding: '8px 16px'
+                borderTop: '1px solid var(--border-color)',
               }}
             >
-              <Typography
-                variant="caption"
-                color="var(--font-color)"
-                sx={{ mb: 0, fontSize: '0.65rem', lineHeight: 1.75 }}
-              >
-                {config.label}
-              </Typography>
-              <Slider
-                size="medium"
-                sx={{
-                  width: '120px',
-                  '& .MuiSlider-thumb': {
-                    width: 10,
-                    height: 10
-                  },
-                  '& .MuiSlider-track': {
-                    color: 'var(--font-color)',
-                    height: 2,
-                    borderRadius: 0
-                  },
-                  '& .MuiSlider-valueLabel': {
-                    fontSize: '0.6rem',
-                    lineHeight: 1.5
-                  },
-                  mb: 0,
-                  pb: 0
-                }}
-                min={config.min ?? 0}
-                max={config.max ?? 100}
-                step={config.step ?? 1}
-                marks
-                value={config.value as number}
-                onChange={(_, value) => onConfigChange(config.name, value as number)}
-                valueLabelDisplay="auto"
-              />
-              <Box
-                sx={{
-                  width: '100px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  mt: '-4px'
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  color="var(--font-color)"
-                  sx={{ fontSize: '0.6rem', lineHeight: 1.5 }}
-                >
-                  {config.min}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="var(--font-color)"
-                  sx={{ fontSize: '0.6rem', lineHeight: 1.5 }}
-                >
-                  {config.max}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-          {config.type === 'boolean' && (
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={config.value as boolean}
-                  onChange={(e) => onConfigChange(config.name, e.target.checked)}
-                  color="primary"
+              {configVars.map((config) => (
+                <FormControl
+                  key={config.name}
                   sx={{
-                    '& .MuiSwitch-switchBase': {
-                      padding: 1
+                    borderTop: '1px solid var(--border-color)',
+                    '&:first-of-type': {
+                      borderTop: 'none',
                     },
-                    '& .MuiSwitch-thumb': {
-                      boxShadow: 'none',
-                      backgroundColor: 'var(--font-color)',
-                      borderRadius: 10,
-                      width: '8px',
-                      height: '8px',
-                      padding: 'auto',
-                      margin: 'auto'
-                    },
-                    '& .MuiSwitch-track': {
-                      backgroundColor: 'var(--bg-color)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 10,
-                      width: '28px',
-                      height: '8px',
-                      padding: 'auto',
-                      margin: 'auto'
-                    },
+                    p: 1,
+                    backgroundColor: 'var(--bg-color)',
                   }}
-                />
-              }
-              label={
-                <Typography variant="body2" color="var(--font-color)">
-                  {config.label ?? config.name}
-                </Typography>
-              }
-            />
-          )}
-        </FormControl>
-      ))}
+                >
+                  {config.type === 'number' && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 1
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        color="var(--font-color)"
+                        sx={{ whiteSpace: 'nowrap', fontSize: '0.75rem' }}
+                      >
+                        {config.label}
+                      </Typography>
+                      <Slider
+                        size="small"
+                        sx={{
+                          width: '100px',
+                          '& .MuiSlider-thumb': {
+                            width: 10,
+                            height: 10
+                          },
+                          '& .MuiSlider-track': {
+                            color: 'var(--font-color)',
+                            height: 2,
+                            borderRadius: 0
+                          },
+                          '& .MuiSlider-valueLabel': {
+                            fontSize: '0.6rem',
+                            lineHeight: 1.5
+                          }
+                        }}
+                        min={config.min ?? 0}
+                        max={config.max ?? 100}
+                        step={config.step ?? 1}
+                        value={config.value as number}
+                        onChange={(_, value) => onConfigChange(config.name, value as number)}
+                        valueLabelDisplay="auto"
+                      />
+                    </Box>
+                  )}
+                  {config.type === 'boolean' && (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={config.value as boolean}
+                          onChange={(e) => onConfigChange(config.name, e.target.checked)}
+                          size="small"
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" color="var(--font-color)" sx={{ whiteSpace: 'nowrap' }}>
+                          {config.label ?? config.name}
+                        </Typography>
+                      }
+                      sx={{ m: 0 }}
+                    />
+                  )}
+                </FormControl>
+              ))}
+            </Box>
+          </>
+        ) : (
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'row',
+            alignItems: 'center',
+            height: '100%',
+            gap: 2
+          }}>
+            {configVars.map((config) => (
+              <FormControl
+                key={config.name}
+                sx={{
+                  borderLeft: '1px solid var(--border-color)',
+                  p: 1,
+                  backgroundColor: 'var(--bg-color)',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  minWidth: 'auto'
+                }}
+              >
+                {config.type === 'number' && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 1
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="var(--font-color)"
+                      sx={{ whiteSpace: 'nowrap', fontSize: '0.75rem' }}
+                    >
+                      {config.label}
+                    </Typography>
+                    <Slider
+                      size="small"
+                      sx={{
+                        width: '100px',
+                        '& .MuiSlider-thumb': {
+                          width: 10,
+                          height: 10
+                        },
+                        '& .MuiSlider-track': {
+                          color: 'var(--font-color)',
+                          height: 2,
+                          borderRadius: 0
+                        },
+                        '& .MuiSlider-valueLabel': {
+                          fontSize: '0.6rem',
+                          lineHeight: 1.5
+                        }
+                      }}
+                      min={config.min ?? 0}
+                      max={config.max ?? 100}
+                      step={config.step ?? 1}
+                      value={config.value as number}
+                      onChange={(_, value) => onConfigChange(config.name, value as number)}
+                      valueLabelDisplay="auto"
+                    />
+                  </Box>
+                )}
+                {config.type === 'boolean' && (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={config.value as boolean}
+                        onChange={(e) => onConfigChange(config.name, e.target.checked)}
+                        size="small"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="var(--font-color)" sx={{ whiteSpace: 'nowrap' }}>
+                        {config.label ?? config.name}
+                      </Typography>
+                    }
+                    sx={{ m: 0 }}
+                  />
+                )}
+              </FormControl>
+            ))}
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 };

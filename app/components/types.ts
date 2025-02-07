@@ -3,6 +3,7 @@ export interface Config {
   annotation?: string;
   sliders?: SliderConfig[];
   toggles?: ToggleConfig[];
+  controlsOrientation?: 'horizontal' | 'vertical';  // new field
 }
 
 export interface SliderConfig {

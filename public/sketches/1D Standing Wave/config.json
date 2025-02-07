@@ -1,5 +1,6 @@
 {
     "title": "Standing Wave Formula in 1D: Superposition of Two 1D Waves",
+    "controlsOrientation": "vertical",
     "annotation": "<span style='color: #0000FF'>■ Nodes: Points of no movement.</span> <br> <span style='color: #FF0000'>↑↓ Antinodes: Points of maximum movement</span>",
     "sliders": [
         {

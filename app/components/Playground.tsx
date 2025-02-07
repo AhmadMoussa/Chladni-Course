@@ -41,6 +41,13 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   // New state to manage copy feedback
   const [copied, setCopied] = useState(false);
 
+  // New state to manage MDX panel visibility
+  const [isMdxCollapsed, setIsMdxCollapsed] = useState(false);
+
+  // Add new state for config controls
+  const [configOrientation, setConfigOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [isConfigCollapsed, setIsConfigCollapsed] = useState(false);
+
   // Function to copy the embed code snippet into the clipboard
   const copyEmbedCode = () => {
     // Safely get the host if available
@@ -83,6 +90,9 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
         }
         if (config.annotation) {
           setAnnotation(config.annotation);
+        }
+        if (config.controlsOrientation) {
+          setConfigOrientation(config.controlsOrientation);
         }
         
         const sliderVars = config.sliders?.map(slider => ({
@@ -268,6 +278,14 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
     }
   };
 
+  // Replace the highlight function in the CodeEditor component with this:
+  const highlightWithLineNumbers = (code: string) => {
+    return highlight(code, languages.javascript, 'javascript')
+      .split('\n')
+      .map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
+      .join('\n');
+  };
+
   return (
     <div className={`${isEmbedded ? 'h-screen' : 'h-full'} flex flex-col overflow-hidden`}
          style={{
@@ -280,7 +298,6 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
         <h2 className="text-m font-bold text-black">
           {sketchTitle}
         </h2>
-        {/* Copy Embed Code button */}
         <div className="flex items-center gap-2">
           <button
             onClick={copyEmbedCode}
@@ -291,84 +308,143 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
         </div>
       </div>
 
-      {/* Main Content: Always horizontal */}
-      <div className="flex-1 flex flex-row overflow-hidden">
-        {/* MDX Documentation Panel */}
-        <div className="w-[25%] border-r border-black overflow-auto">
-          <div className="p-4 text-black prose max-w-none text-sm">
-            {mdxContent ? (
-              <MDXRemote {...mdxContent} />
-            ) : (
-              <p className="text-black">No documentation available</p>
-            )}
+      {/* Main Content: Horizontal layout with MDX on left */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* MDX Documentation Panel - Only show if mdxContent exists */}
+        {mdxContent && (
+          <div className={`${isMdxCollapsed ? 'w-8' : 'w-[25%]'} transition-all duration-300 flex`}>
+            <div className={`flex-1 border-r border-black overflow-hidden ${isMdxCollapsed ? 'bg-white' : ''}`}>
+              {isMdxCollapsed ? (
+                <div 
+                  className="h-full flex items-center justify-center cursor-pointer"
+                  onClick={() => setIsMdxCollapsed(false)}
+                >
+                  <span className="rotate-180 whitespace-nowrap text-black text-sm"
+                        style={{ writingMode: 'vertical-rl' }}>
+                    Explanation
+                  </span>
+                </div>
+              ) : (
+                <div className="h-full flex">
+                  <div className="flex-1 relative">
+                    <div className="p-4 text-black prose max-w-none text-sm h-full overflow-y-auto">
+                      <MDXRemote {...mdxContent} />
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsMdxCollapsed(true)}
+                    className="w-4 h-full border-l border-black bg-white hover:bg-gray-50 flex items-center justify-center"
+                  >
+                    ←
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
         
-        {/* Editor Panel */}
-        <div className="w-[35%] flex flex-col ">
-          {error && (
-            <div className="px-4 py-2 bg-red text-black text-sm">
-              <p className="font-mono">{error}</p>
+        {/* Editor, Sketch, and Controls container */}
+        <div className="flex-1 flex flex-col">
+          {/* Editor and Sketch container */}
+          <div className="flex-1 flex">
+            {/* Editor Panel */}
+            <div className="w-[47%] flex flex-col">
+              {error && (
+                <div className="px-4 py-2 bg-red text-black text-sm">
+                  <p className="font-mono">{error}</p>
+                </div>
+              )}
+              <div className="flex-1 px-4 relative">
+                <div className="absolute inset-0 overflow-auto">
+                  <CodeEditor
+                    value={pendingCode}
+                    onValueChange={handleCodeChange}
+                    highlight={highlightWithLineNumbers}
+                    padding={10}
+                    className="w-full min-h-full font-mono text-sm editor"
+                    style={{
+                      fontFamily: '"Fira Code", monospace',
+                      fontSize: 14,
+                      backgroundColor: 'white',
+                      borderRadius: 0,
+                    }}
+                  />
+                </div>
+              </div>
             </div>
-          )}
-          <div className="flex-1 px-4 relative">
-            <div className="absolute inset-0 overflow-auto">
-              <CodeEditor
-                value={pendingCode}
-                onValueChange={handleCodeChange}
-                highlight={(code) =>
-                  highlight(code, languages.javascript, 'javascript')
-                }
-                padding={10}
-                className="w-full min-h-full font-mono border line-numbers text-sm"
-                preClassName="line-numbers"
-              />
-            </div>
-          </div>
-        </div>
-        
-        {/* Sketch Panel */}
-        <div className="w-[40%] bg-white flex flex-col border-l border-black">
-          {annotation && (
-            <div className="p-4 bg-white border-b border-black">
-              <p 
-                className="text-sm text-black"
-                dangerouslySetInnerHTML={{ __html: annotation }}
-              />
-            </div>
-          )}
-          <div className="flex-1 flex items-center justify-center">
-            <iframe 
-              ref={iframeRef}
-              className="w-full h-full" 
-              src={`${sketchPath}/index.html`} 
-            />
-          </div>
-        </div>
-      </div>
+            
+            {/* Sketch Panel */}
+            <div className="w-[53%] flex flex-col border-l border-black">
+              <div className="flex-1 flex">
+                {/* Sketch Container */}
+                <div className="flex-1 bg-white flex flex-col">
+                  {annotation && (
+                    <div className="p-4 bg-white border-b border-black">
+                      <p 
+                        className="text-sm text-black"
+                        dangerouslySetInnerHTML={{ __html: annotation }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 flex items-center justify-center">
+                    <iframe 
+                      ref={iframeRef}
+                      className="w-full h-full" 
+                      src={`${sketchPath}/index.html`} 
+                    />
+                  </div>
+                </div>
 
-      {/* Controls Section */}
-      <div className="bg-white border-t border-black px-0 py-0">
-        <div className="flex items-center gap-4 h-full">
-          <button
-            onClick={runSketch}
-            className="bg-white border border-r-black text-black px-4 py-2 hover:bg-[#814EF9] hover:text-white transition-colors font-medium text-sm m-0 h-full"
-          >
-            Run Sketch
-          </button>
-          <label className="flex items-center gap-2 text-sm text-black">
-            <input
-              type="checkbox"
-              checked={autoRun}
-              onChange={(e) => setAutoRun(e.target.checked)}
-              className="form-checkbox h-4 w-4 text-black"
-            />
-            <span>Auto-run</span>
-          </label>
-          <ConfigControls 
-            configVars={configVars}
-            onConfigChange={handleConfigChange}
-          />
+                {/* Vertical Config Controls */}
+                {configOrientation === 'vertical' && (
+                  <div className="border-l border-black">
+                    <ConfigControls 
+                      configVars={configVars}
+                      onConfigChange={handleConfigChange}
+                      orientation="vertical"
+                      isCollapsed={isConfigCollapsed}
+                      onCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
+                      autoRun={autoRun}
+                      onAutoRunChange={(checked) => setAutoRun(checked)}
+                      onRunSketch={runSketch}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Horizontal Config Controls */}
+          {configOrientation === 'horizontal' && (
+            <div className="bg-white border-t border-black px-0 py-0">
+              <div className="flex items-center h-full">
+                <div className="flex items-center gap-4 h-full">
+                  <button
+                    onClick={runSketch}
+                    className="bg-white border border-r-black text-black px-4 py-2 hover:bg-[#814EF9] hover:text-white transition-colors font-medium text-sm m-0 h-full"
+                  >
+                    Run Sketch
+                  </button>
+                  <label className="flex items-center gap-2 text-sm text-black">
+                    <input
+                      type="checkbox"
+                      checked={autoRun}
+                      onChange={(e) => setAutoRun(e.target.checked)}
+                      className="form-checkbox h-4 w-4 text-black"
+                    />
+                    <span>Auto-run</span>
+                  </label>
+                </div>
+                <div className="ml-auto">
+                  <ConfigControls 
+                    configVars={configVars}
+                    onConfigChange={handleConfigChange}
+                    orientation="horizontal"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

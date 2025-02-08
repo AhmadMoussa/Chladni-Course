@@ -362,12 +362,12 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
                     onValueChange={handleCodeChange}
                     highlight={highlightWithLineNumbers}
                     padding={10}
-                    className="w-full min-h-full font-mono text-sm editor"
+                    className="w-full min-h-full font-mono text-sm editor "
                     style={{
                       fontFamily: '"Fira Code", monospace',
                       fontSize: 14,
                       backgroundColor: 'white',
-                      borderRadius: 0,
+                      borderRadius: 0
                     }}
                   />
                 </div>

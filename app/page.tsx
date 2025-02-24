@@ -1,23 +1,45 @@
 // pages/playground.tsx
 import React from 'react';
-import { readdir } from 'fs/promises';
-import path from 'path';
 import SketchSelector from './components/SketchSelector';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 // Function to get sketches
 async function getSketches() {
-  const sketchesDir = path.join(process.cwd(), 'public', 'sketches');
-  try {
-    const files = await readdir(sketchesDir);
-    return files.filter(file => file !== '.DS_Store');
-  } catch (error) {
-    console.error('Error reading sketches directory:', error);
+  const supabase = createServerComponentClient({ cookies });
+  const { data: sketches, error } = await supabase
+    .from('sketches')
+    .select('id, title')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching sketches:', error);
     return [];
   }
+
+  if (!sketches || sketches.length === 0) {
+    return [{
+      id: 'demo',
+      title: 'Demo Sketch (No sketches in database)'
+    }];
+  }
+
+  return sketches.map(sketch => ({
+    id: sketch.id,
+    title: sketch.title
+  }));
 }
 
 // Convert to async component
 const PlaygroundPage = async () => {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect('/auth/signin');
+  }
+
   const sketches = await getSketches();
   
   return (

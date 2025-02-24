@@ -1,6 +1,8 @@
 import { Fira_Code } from 'next/font/google';
 import './globals.css';
 import 'katex/dist/katex.min.css';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 const firaCode = Fira_Code({
   subsets: ['latin'],
@@ -12,11 +14,15 @@ export const metadata = {
   description: 'Simple demo page for code embeds',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+  const { data: { session } } = await supabase.auth.getSession();
+
   return (
     <html lang="en">
       <body className={`${firaCode.className} ${firaCode.variable} antialiased`}>

@@ -4,40 +4,36 @@ interface P5FrameProps {
   htmlContent: string;
   sketchPath: string;
   activeCode: string;
+  cssContent?: string;
 }
 
 const P5Frame = forwardRef<HTMLIFrameElement, P5FrameProps>(
-  ({ htmlContent, sketchPath, activeCode }, ref) => {
-    // Effect to initialize the iframe with HTML content
+  ({ htmlContent, sketchPath, activeCode, cssContent }, ref) => {
     useEffect(() => {
-      if (ref && 'current' in ref && ref.current && htmlContent) {
+      if (ref && 'current' in ref && ref.current) {
         const iframe = ref.current;
         
-        // Modify HTML content to use absolute paths
-        const modifiedHtml = htmlContent
-          .replace(/src="libraries\//g, `src="${sketchPath}/libraries/`)
-          .replace(/href="style.css"/g, `href="${sketchPath}/style.css"`);
+        // Create a complete HTML document
+        const doc = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <style>${cssContent || ''}</style>
+            </head>
+            <body>
+              ${htmlContent}
+              <script>
+                ${activeCode}
+              </script>
+            </body>
+          </html>
+        `;
         
-        // Set the initial HTML content
-        iframe.srcdoc = modifiedHtml;
-
-        const handleLoad = () => {
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (!iframeDoc) return;
-
-          // Create and append the initial sketch script
-          if (activeCode) {
-            const sketchScript = iframeDoc.createElement('script');
-            sketchScript.id = 'sketch-script';
-            sketchScript.textContent = activeCode;
-            iframeDoc.body.appendChild(sketchScript);
-          }
-        };
-        
-        iframe.addEventListener('load', handleLoad);
-        return () => iframe.removeEventListener('load', handleLoad);
+        // Set the content
+        iframe.srcdoc = doc;
       }
-    }, [htmlContent, sketchPath, activeCode, ref]);
+    }, [htmlContent, cssContent, activeCode, ref]);
 
     return (
       <iframe

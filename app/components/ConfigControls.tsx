@@ -8,6 +8,9 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Typography from '@mui/material/Typography';
 import VerticalCollapseButton from './VerticalCollapseButton';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlay, faStop, faRotateRight } from '@fortawesome/free-solid-svg-icons'
+
 interface ConfigControlsProps {
   configVars: ConfigVariable[];
   onConfigChange: (name: string, value: number | boolean) => void;
@@ -17,6 +20,8 @@ interface ConfigControlsProps {
   autoRun?: boolean;
   onAutoRunChange?: (checked: boolean) => void;
   onRunSketch?: () => void;
+  onStopSketch?: () => void;
+  onAutoRunSketch?: () => void;
 }
 
 const ConfigControls: React.FC<ConfigControlsProps> = ({ 
@@ -27,7 +32,9 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({
   onCollapse,
   autoRun,
   onAutoRunChange,
-  onRunSketch
+  onRunSketch,
+  onStopSketch,
+  onAutoRunSketch
 }) => {
   const isVertical = orientation === 'vertical';
 
@@ -103,7 +110,7 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({
                     cursor: 'pointer',
                   }}
                 >
-                  Run Sketch
+                  <FontAwesomeIcon icon={faPlay} />
                 </button>
               </Box>
               <FormControlLabel
@@ -215,7 +222,7 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({
             width: '100%',
             justifyContent: 'space-between'
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0 }}>
               <button
                 onClick={onRunSketch}
                 style={{
@@ -227,9 +234,35 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({
                   height: '100%'
                 }}
               >
-                Run Sketch
+                <FontAwesomeIcon icon={faPlay} />
               </button>
-              <FormControlLabel
+              <button
+                onClick={onStopSketch}
+                style={{
+                  padding: '10px 16px',
+                  backgroundColor: 'white',
+                  borderRight: '1px solid var(--border-color)',
+                  color: 'var(--font-color)',
+                  cursor: 'pointer',
+                  height: '100%'
+                }}
+              >
+                <FontAwesomeIcon icon={faStop} />
+              </button>
+              <button
+                onClick={onAutoRunSketch}
+                style={{
+                  padding: '10px 16px',
+                  backgroundColor: 'white',
+                  borderRight: '1px solid var(--border-color)',
+                  color: 'var(--font-color)',
+                  cursor: 'pointer',
+                  height: '100%'
+                }}
+              >
+                <FontAwesomeIcon icon={faRotateRight} />
+              </button>
+              {/* <FormControlLabel
                 control={
                   <Switch
                     checked={autoRun}
@@ -242,7 +275,7 @@ const ConfigControls: React.FC<ConfigControlsProps> = ({
                     Auto-run
                   </Typography>
                 }
-              />
+              /> */}
             </Box>
             <Box sx={{ 
               display: 'flex', 

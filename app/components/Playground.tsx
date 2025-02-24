@@ -14,9 +14,14 @@ import type { MDXRemoteSerializeResult } from 'next-mdx-remote';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js'
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
 
-import { ConfigVariable, Config } from './types';
+import { ConfigVariable, SliderConfig, ToggleConfig, Config } from './types';
 import ConfigControls from './ConfigControls';
 import VerticalCollapseButton from './VerticalCollapseButton';
+import P5Frame from './P5Frame';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faLink, faCode } from '@fortawesome/free-solid-svg-icons'
+
 
 // Create a dynamic import for the Editor with SSR disabled
 const CodeEditor = dynamic(
@@ -27,9 +32,22 @@ const CodeEditor = dynamic(
 interface P5PlaygroundProps {
   sketchPath: string;
   isEmbedded?: boolean;
+  isPreview?: boolean;
+  previewData?: {
+    html_content: string;
+    js_content: string;
+    css_content: string;
+    mdx_content?: string;
+    config?: Config;
+  };
 }
 
-const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = false }) => {
+const P5Playground: React.FC<P5PlaygroundProps> = ({ 
+  sketchPath, 
+  isEmbedded = false, 
+  isPreview = false,
+  previewData 
+}) => {
   const [pendingCode, setPendingCode] = useState('');
   const [configVars, setConfigVars] = useState<ConfigVariable[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -40,7 +58,8 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   const [annotation, setAnnotation] = useState<string | null>(null);
 
   // New state to manage copy feedback
-  const [copied, setCopied] = useState(false);
+  const [copiedURL, setCopiedURL] = useState(false);
+  const [copiedEmbedCode, setCopiedEmbedCode] = useState(false);
 
   // New state to manage MDX panel visibility
   const [isMdxCollapsed, setIsMdxCollapsed] = useState(false);
@@ -49,54 +68,43 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   const [configOrientation, setConfigOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(false);
 
-  // Function to copy the embed code snippet into the clipboard
+  const copyURL = () => {
+    const host = typeof window !== 'undefined' ? window.location.origin : '';
+    const embedCode = `${host}/embed${sketchPath}`;
+    
+    navigator.clipboard.writeText(embedCode)
+      .then(() => { setCopiedURL(true); setTimeout(() => setCopiedURL(false), 2000); })
+  };
+  
   const copyEmbedCode = () => {
-    // Safely get the host if available
     const host = typeof window !== 'undefined' ? window.location.origin : '';
     const embedCode = `<iframe src="${host}/embed${sketchPath}" width="600" height="400" frameborder="0" allowfullscreen></iframe>`;
     
     navigator.clipboard.writeText(embedCode)
-      .then(() => {
-        setCopied(true);
-        // Reset the copied state after 2 seconds
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch(err => console.error("Failed to copy embed code:", err));
+      .then(() => { setCopiedEmbedCode(true); setTimeout(() => setCopiedEmbedCode(false), 2000); })
   };
 
   useEffect(() => {
     setConfigVars([]);
     
-    // Create a new iframe when sketch changes
-    const newIframe = document.createElement('iframe');
-    newIframe.className = 'w-full h-full';
-    newIframe.src = `${sketchPath}/index.html`;
-
-    // Replace the old iframe with the new one
-    if (iframeRef.current?.parentNode) {
-      iframeRef.current.parentNode.replaceChild(newIframe, iframeRef.current);
-      iframeRef.current = newIframe;
-    }
-    
-    fetch(`${sketchPath}/config.json`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Config file not found');
+    // If preview data is provided, use it directly instead of fetching
+    if (previewData) {
+      const sketch = previewData;
+      
+      if (sketch.config) {
+        const configData = sketch.config;
+        
+        if (configData.title) {
+          setSketchTitle(configData.title);
         }
-        return response.json();
-      })
-      .then((config: Config) => {
-        if (config.title) {
-          setSketchTitle(config.title);
+        if (configData.annotation) {
+          setAnnotation(configData.annotation);
         }
-        if (config.annotation) {
-          setAnnotation(config.annotation);
-        }
-        if (config.controlsOrientation) {
-          setConfigOrientation(config.controlsOrientation);
+        if (configData.controlsOrientation) {
+          setConfigOrientation(configData.controlsOrientation);
         }
         
-        const sliderVars = config.sliders?.map(slider => ({
+        const sliderVars = configData.sliders?.map(slider => ({
           name: slider.name,
           value: slider.initial,
           type: 'number' as const,
@@ -106,7 +114,7 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
           label: slider.label
         })) || [];
 
-        const toggleVars = config.toggles?.map(toggle => ({
+        const toggleVars = configData.toggles?.map(toggle => ({
           name: toggle.name,
           value: toggle.initial,
           type: 'boolean' as const,
@@ -114,57 +122,118 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
         })) || [];
 
         setConfigVars([...sliderVars, ...toggleVars]);
-      })
-      .catch(() => {
-        console.log('No config file found or invalid JSON - continuing without config');
-        setConfigVars([]);
-        setAnnotation(null);
-      });
+      }
 
-    fetch(`${sketchPath}/index.js`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to fetch index.js: ${response.statusText}`);
-        }
-        return response.text();
-      })
-      .then((jsData) => {
-        setPendingCode(jsData);
-        if (autoRun) {
-          // Wait for the new iframe to load before sending code
-          newIframe.onload = () => {
-            setTimeout(() => {
-              iframeRef.current?.contentWindow?.postMessage({
-                type: 'codeUpdate',
-                code: jsData
-              }, '*');
-            }, 50);
-          };
-        }
-      })
-      .catch((err) => console.error(err));
-
-    fetch(`${sketchPath}/content.mdx`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to fetch content.mdx: ${response.statusText}`);
-        }
-        return response.text();
-      })
-      .then(async (mdxText) => {
-        const serialized = await serialize(mdxText, {
+      // Set up preview content
+      setPendingCode(sketch.js_content);
+      
+      if (sketch.mdx_content) {
+        serialize(sketch.mdx_content, {
           mdxOptions: {
             remarkPlugins: [remarkMath],
             rehypePlugins: [rehypeKatex],
           }
+        }).then(setMdxContent);
+      }
+      
+      return;
+    }
+
+    // Original fetch logic for non-preview mode
+    fetch(`/api/${sketchPath}`)
+      .then(response => {
+
+        return response.text().then(text => {
+
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+  
+            throw new Error(`Invalid JSON response: ${text}`);
+          }
         });
-        setMdxContent(serialized);
       })
-      .catch(() => {
-        console.log('No content.mdx file found - continuing without documentation');
-        setMdxContent(null);
+      .then(sketch => {
+        if (sketch.config) {
+          let configData;
+          try {
+           
+            // Check if config is already an object
+            configData = typeof sketch.config === 'string' 
+              ? JSON.parse(sketch.config) 
+              : sketch.config;
+
+            if (configData.title) {
+              setSketchTitle(configData.title);
+            }
+            if (configData.annotation) {
+              setAnnotation(configData.annotation);
+            }
+            if (configData.controlsOrientation) {
+              setConfigOrientation(configData.controlsOrientation);
+            }
+            
+            const sliderVars = configData.sliders?.map((slider: SliderConfig) => ({
+              name: slider.name,
+              value: slider.initial,
+              type: 'number' as const,
+              min: slider.min,
+              max: slider.max,
+              step: slider.step,
+              label: slider.label
+            })) || [];
+
+            const toggleVars = configData.toggles?.map((toggle: ToggleConfig) => ({
+              name: toggle.name,
+              value: toggle.initial,
+              type: 'boolean' as const,
+              label: toggle.label
+            })) || [];
+
+            setConfigVars([...sliderVars, ...toggleVars]);
+          } catch (error) {
+            console.error('Error parsing config:', error);
+            setError('Invalid sketch configuration');
+          }
+        }
+
+        // Set up HTML content
+        const htmlDoc = new DOMParser().parseFromString(sketch.html_content, 'text/html');
+        const scriptElement = htmlDoc.createElement('script');
+        scriptElement.setAttribute('id', 'sketchCode');
+        scriptElement.textContent = sketch.js_content;
+        htmlDoc.body.appendChild(scriptElement);
+        
+        // Set up CSS
+        const styleElement = htmlDoc.createElement('style');
+        styleElement.textContent = sketch.css_content;
+        htmlDoc.head.appendChild(styleElement);
+        
+        const newIframe = document.createElement('iframe');
+        newIframe.className = 'w-full h-full';
+        newIframe.srcdoc = htmlDoc.documentElement.outerHTML;
+        setPendingCode(sketch.js_content);
+        
+        if (sketch.mdx_content) {
+          serialize(sketch.mdx_content, {
+            mdxOptions: {
+              remarkPlugins: [remarkMath],
+              rehypePlugins: [rehypeKatex],
+            }
+          }).then(setMdxContent);
+        }
+
+        // Replace the old iframe with the new one
+        if (iframeRef.current?.parentNode) {
+          iframeRef.current.parentNode.replaceChild(newIframe, iframeRef.current);
+          iframeRef.current = newIframe;
+        }
+      })
+      .catch(error => {
+        console.error('Error details:', error);
+        setError(error.message || 'Failed to load sketch');
       });
-  }, [sketchPath, autoRun]);
+  }, [sketchPath, previewData]);
 
   useEffect(() => {
     configVars.forEach(({ name, value }) => {
@@ -209,41 +278,13 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
   };
 
   const runSketch = () => {
-    console.log('Playground: Running sketch');
-    
     try {
-      setError(null);
-      new Function(pendingCode);
-
-      // Create a new iframe element
-      const newIframe = document.createElement('iframe');
-      newIframe.className = 'w-full h-full';
-      newIframe.src = `${sketchPath}/index.html`;
-
-      // Replace the old iframe with the new one
-      if (iframeRef.current?.parentNode) {
-        iframeRef.current.parentNode.replaceChild(newIframe, iframeRef.current);
-        iframeRef.current = newIframe;
-
-        // Wait for the new iframe to load before sending the code
-        newIframe.onload = () => {
-          setTimeout(() => {
-            iframeRef.current?.contentWindow?.postMessage({
-              type: 'codeUpdate',
-              code: pendingCode
-            }, '*');
-
-            // Reapply config variables
-            configVars.forEach(({ name, value }) => {
-              iframeRef.current?.contentWindow?.postMessage({
-                type: 'configUpdate',
-                name: `fx.${name}`,
-                value
-              }, '*');
-            });
-          }, 50);
-        };
-      }
+      console.log("run sketch")
+      console.log(pendingCode)
+      iframeRef.current?.contentWindow?.postMessage({
+        type: 'codeUpdate',
+        code: pendingCode
+      }, '*');
       
     } catch (error) {
       console.error('Syntax error:', error);
@@ -287,6 +328,93 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
       .join('\n');
   };
 
+  if (isPreview) {
+    return (
+      <div className="w-full h-full flex flex-col overflow-hidden">
+        {/* Title Bar */}
+        <div className="p-4 border-b border-black bg-white flex items-center justify-between">
+          <h2 className="text-m font-bold text-black">
+            {sketchTitle}
+          </h2>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Editor and Preview container */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex">
+              {/* Editor Panel */}
+              <div className="w-[47%] flex flex-col">
+                {error && (
+                  <div className="px-4 py-2 bg-red text-black text-sm">
+                    <p className="font-mono">{error}</p>
+                  </div>
+                )}
+                <div className="flex-1 px-4 relative">
+                  <div className="absolute inset-0 overflow-auto">
+                    <CodeEditor
+                      value={pendingCode}
+                      onValueChange={handleCodeChange}
+                      highlight={highlightWithLineNumbers}
+                      padding={10}
+                      className="w-full min-h-full font-mono text-sm editor"
+                      style={{
+                        fontFamily: '"Fira Code", monospace',
+                        fontSize: 14,
+                        backgroundColor: 'white',
+                        borderRadius: 0
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview Panel */}
+              <div className="w-[53%] flex flex-col border-l border-black">
+                <div className="flex-1 flex">
+                  <div className="flex-1 bg-white flex flex-col">
+                    {annotation && (
+                      <div className="p-4 bg-white border-b border-black">
+                        <p 
+                          className="text-sm text-black"
+                          dangerouslySetInnerHTML={{ __html: annotation }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <P5Frame
+                        ref={iframeRef}
+                        htmlContent={previewData?.html_content || ''}
+                        cssContent={previewData?.css_content}
+                        sketchPath={sketchPath}
+                        activeCode={pendingCode}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            {/* Controls */}
+            {configOrientation === 'horizontal' && (
+              <div className="border-t border-black">
+                <ConfigControls 
+                  configVars={configVars}
+                  onConfigChange={handleConfigChange}
+                  orientation="horizontal"
+                  autoRun={autoRun}
+                  onAutoRunChange={(checked) => setAutoRun(checked)}
+                  onRunSketch={runSketch}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`${isEmbedded ? 'h-screen' : 'h-full'} flex flex-col overflow-hidden`}
          style={{
@@ -295,16 +423,22 @@ const P5Playground: React.FC<P5PlaygroundProps> = ({ sketchPath, isEmbedded = fa
            border: `1px solid var(--border-color)`
          }}>
       {/* Title Div: Spans full width */}
-      <div className="p-4 border-b border-black bg-white flex items-center justify-between">
-        <h2 className="text-m font-bold text-black">
+      <div className=" border-b border-black bg-white flex items-center justify-between">
+        <h2 className="text-m font-bold text-black mx-2 my-1">
           {sketchTitle}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
+          <button
+            onClick={copyURL}
+            className="bg-white border border-l-black text-black px-2 py-1 hover:bg-[#16DF81] hover:text-white"
+          >
+            {copiedURL ? <FontAwesomeIcon icon={faLink} className="text-green-500" /> : <FontAwesomeIcon icon={faLink} />}
+          </button>
           <button
             onClick={copyEmbedCode}
-            className="bg-white border border-black text-black px-2 py-1 hover:bg-[#16DF81] hover:text-white"
+            className="bg-white border border-l-black text-black px-2 py-1 hover:bg-[#16DF81] hover:text-white"
           >
-            {copied ? 'Copied!' : 'Copy Embed Code'}
+            {copiedEmbedCode ? <FontAwesomeIcon icon={faCode} className="text-green-500" /> : <FontAwesomeIcon icon={faCode} />}
           </button>
         </div>
       </div>
